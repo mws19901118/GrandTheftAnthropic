@@ -14,6 +14,13 @@
   // illustration, not on an arbitrary world-space offset. This prevents the
   // forklift from wandering onto the road or the shutter appearing at a corner.
   const SPRITE={w:465,h:310,offsetY:88};
+  // Every overlay is registered in source-image pixels. The depot's existing
+  // illustration already contains loading doors and a forklift; do not paint
+  // another shutter on top of an unrelated wall or place a second forklift
+  // outside the loading yard.
+  const DEPOT={apron:{left:1175,right:1375,top:770,bottom:865},bay2:{x:1060,y:735}};
+  let debug=false;
+  addEventListener('keydown',e=>{if(e.key.toLowerCase()==='k'&&!e.repeat){debug=!debug;console.info('Depot art guides:',debug?'on':'off')}});
   function artPoint(px,py){
     const at=iso(site.x,site.y,0);
     return {x:at.x-SPRITE.w/2+px/1536*SPRITE.w,
@@ -24,7 +31,8 @@
   function forklift(t){
     const phase=(t/12000)%1;
     const travel=phase<.38?phase/.38:phase<.60?1:phase<.98?1-(phase-.60)/.38:0;
-    const q=artPoint(1250+travel*105,845-travel*28);
+    const apron=DEPOT.apron;
+    const q=artPoint(apron.left+35+travel*(apron.right-apron.left-75),apron.bottom-25-travel*20);
     const bob=Math.sin(t/210)*.45;
     ctx.save();ctx.translate(q.x,q.y+bob);ctx.scale(.43,.43);
     ctx.fillStyle='#02080d99';ctx.beginPath();ctx.ellipse(2,13,34,11,0,0,Math.PI*2);ctx.fill();
@@ -37,17 +45,26 @@
     ctx.restore();
   }
   function door(t){
-    // Bay #2 is visibly on the warehouse's right-hand facade.
-    // Only draw the moving shutter slats, not a new fake door frame.
-    const q=artPoint(1060,735),cycle=(t/12000)%1;
-    const open=cycle<.18?cycle/.18:cycle<.65?1:cycle<.85?1-(cycle-.65)/.20:0;
-    const h=27*(1-open);
-    if(h<.8)return;
-    ctx.save();ctx.translate(q.x,q.y);
-    ctx.fillStyle='#57616a';ctx.fillRect(-13,-27,26,h);
-    ctx.strokeStyle='#b7c3c8';ctx.lineWidth=.65;
-    for(let y=-26;y<-27+h;y+=3.5){ctx.beginPath();ctx.moveTo(-13,y);ctx.lineTo(13,y);ctx.stroke()}
+    // The raster artwork already has a baked-in shutter. Overlaying a second
+    // opaque shutter produces a visibly misplaced door; use a subtle amber
+    // loading-status light instead until a clean shutter sprite is supplied.
+    const q=artPoint(DEPOT.bay2.x,DEPOT.bay2.y-35);
+    const active=(t/12000)%1>.18 && (t/12000)%1<.85;
+    ctx.save();
+    ctx.globalAlpha=active?.85:.35;
+    ctx.fillStyle=active?'#ffbd52':'#65ed72';
+    ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=8;
+    ctx.beginPath();ctx.arc(q.x,q.y,2.2,0,Math.PI*2);ctx.fill();
     ctx.restore();
+  }
+  function guides(){
+    if(!debug)return;
+    const a=DEPOT.apron;
+    const p=artPoint(a.left,a.top),r=artPoint(a.right,a.bottom);
+    ctx.save();ctx.strokeStyle='#00ffff';ctx.lineWidth=1.5;ctx.strokeRect(p.x,p.y,r.x-p.x,r.y-p.y);
+    const b=artPoint(DEPOT.bay2.x,DEPOT.bay2.y);
+    ctx.fillStyle='#fff';ctx.font='11px monospace';ctx.fillText('BAY 2 (image px)',b.x+5,b.y);
+    ctx.fillText('FORKLIFT YARD',p.x,p.y-5);ctx.restore();
   }
   function steam(t){
     ctx.save();for(let vent=0;vent<3;vent++){
@@ -76,6 +93,6 @@
   warehouseDetail=function(t){
     if(!ready){oldDetail(t);return}
     if(!nearDepot())return;
-    door(t);forklift(t);lights(t);
+    door(t);forklift(t);lights(t);guides();
   };
 })();
