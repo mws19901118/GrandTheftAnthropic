@@ -37,13 +37,13 @@ function handleStoryInteraction(){
 function beginBlackwellLoading(){
  const now=performance.now();
  storyMissionState.loadingStart=now;
- storyMissionState.loadingUntil=now+6500;
+ storyMissionState.loadingUntil=now+1500;
  showDialog('ALICE','Payment confirmed. Loading Blackwell crates now. Stay clear of the forklift.');
  toast('NVIDIA LOADING BAY · BLACKWELL DISPATCH');
 }
 function blackwellLoadingProgress(t){
  if(stage!==0||!storyMissionState.loadingUntil)return -1;
- return Math.max(0,Math.min(1,(t-storyMissionState.loadingStart)/6500));
+ return Math.max(0,Math.min(1,(t-storyMissionState.loadingStart)/1500));
 }
 function openTerminal(){const i=storyMissionState.terminal;if(i>=TERMINAL_STEPS.length){closeModal();advance();return}const step=TERMINAL_STEPS[i];modal('THE <span>EX-OPENAI FILES</span>',step.question+'<br><br>Terminal '+(i+1)+' of '+TERMINAL_STEPS.length+' · Security alerts: '+storyMissionState.security,step.options.map((o,j)=>({text:o,alt:j!==step.correct,fn:()=>{
  if(j===step.correct){storyMissionState.terminal++;if(storyMissionState.terminal===TERMINAL_STEPS.length){closeModal();advance()}else openTerminal()}
