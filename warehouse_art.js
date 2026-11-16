@@ -29,7 +29,8 @@
   // Loading apron runs along the RIGHT face of the warehouse illustration.
   // These endpoints are intentionally both INSIDE the apron on the image.
   function forklift(t){
-    const phase=(t/12000)%1;
+    const loading=typeof blackwellLoadingProgress==='function'?blackwellLoadingProgress(t):-1;
+    const phase=loading>=0?Math.min(.98,loading):((t/12000)%1);
     const travel=phase<.38?phase/.38:phase<.60?1:phase<.98?1-(phase-.60)/.38:0;
     const apron=DEPOT.apron;
     const q=artPoint(apron.left+35+travel*(apron.right-apron.left-75),apron.bottom-25-travel*20);
@@ -66,6 +67,23 @@
     ctx.fillStyle='#fff';ctx.font='11px monospace';ctx.fillText('BAY 2 (image px)',b.x+5,b.y);
     ctx.fillText('FORKLIFT YARD',p.x,p.y-5);ctx.restore();
   }
+  function cargoScene(t){
+    const progress=typeof blackwellLoadingProgress==='function'?blackwellLoadingProgress(t):-1;
+    if(progress<0)return;
+    // All effects are positioned in the source artwork's coordinate system.
+    const crate=artPoint(1265+Math.min(1,progress*2)*65,790);
+    ctx.save();ctx.translate(crate.x,crate.y);
+    ctx.fillStyle='#101a1d';ctx.fillRect(-13,-11,26,22);
+    ctx.fillStyle='#9bea50';ctx.fillRect(-11,-9,22,4);
+    ctx.strokeStyle='#d7ffb4';ctx.lineWidth=1;ctx.strokeRect(-13,-11,26,22);
+    ctx.fillStyle='#fff';ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText('B200',0,4);
+    ctx.restore();
+    const a=artPoint(1050,570);
+    ctx.save();ctx.font='bold 12px monospace';ctx.textAlign='center';
+    ctx.fillStyle='#b5ff72';ctx.shadowColor='#84ff3d';ctx.shadowBlur=12;
+    ctx.fillText('BLACKWELL DISPATCH  '+Math.round(progress*100)+'%',a.x,a.y);
+    ctx.restore();
+  }
   function steam(t){
     ctx.save();for(let vent=0;vent<3;vent++){
       const base=pos(-72+vent*76,-40,155);
@@ -93,6 +111,6 @@
   warehouseDetail=function(t){
     if(!ready){oldDetail(t);return}
     if(!nearDepot())return;
-    door(t);forklift(t);lights(t);guides();
+    door(t);forklift(t);cargoScene(t);lights(t);guides();
   };
 })();
