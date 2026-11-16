@@ -45,7 +45,7 @@ function blackwellLoadingProgress(t){
  if(stage!==0||!storyMissionState.loadingUntil)return -1;
  return Math.max(0,Math.min(1,(t-storyMissionState.loadingStart)/1500));
 }
-function openTerminal(){const i=storyMissionState.terminal;if(i>=TERMINAL_STEPS.length){closeModal();advance();return}const step=TERMINAL_STEPS[i];modal('THE <span>EX-OPENAI FILES</span>',step.question+'<br><br>Terminal '+(i+1)+' of '+TERMINAL_STEPS.length+' · Security alerts: '+storyMissionState.security,step.options.map((o,j)=>({text:o,alt:j!==step.correct,fn:()=>{
+function openTerminal(){const i=storyMissionState.terminal;if(i>=TERMINAL_STEPS.length){closeModal();advance();return}const step=TERMINAL_STEPS[i];modal('THE <span>EX-OPENAI FILES</span>',step.question+'<br><br>Terminal '+(i+1)+' of '+TERMINAL_STEPS.length+' · Security alerts: '+storyMissionState.security,step.options.map((o,j)=>({text:o,fn:()=>{
  if(j===step.correct){storyMissionState.terminal++;if(storyMissionState.terminal===TERMINAL_STEPS.length){closeModal();advance()}else openTerminal()}
  else{storyMissionState.attempts++;storyMissionState.security++;wanted=Math.max(wanted,Math.min(4,storyMissionState.security));cash=Math.max(0,cash-35);toast('WRONG ANSWER · -$35 LEGAL FEES');if(storyMissionState.security>=3){closeModal();fail()}else openTerminal()}
  }})).concat([{text:'LEAVE TERMINAL',alt:true,fn:closeModal}]));}
