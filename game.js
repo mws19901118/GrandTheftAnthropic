@@ -17,7 +17,7 @@ function saveGame(quiet=false){
  if(!running||locked)return;
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:13,storyMissionState,difficulty,gigCompleted,vehicleUpgrade,stage,cash,gpu,hype,safety,wanted,carrying,driving,player,car,ownedProperties,completedAssetMissions,cycles,economyElapsed,gigCooldown,ipoComplete,assetRun,velocity,cargoIntegrity,ts:Date.now()}));if(!quiet)toast('GAME SAVED · LOCAL BROWSER')}catch(e){if(!quiet)toast('SAVE UNAVAILABLE · PRIVATE MODE?')}
 }
-function loadGame(){try{let raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem(LEGACY_SAVE_KEY);if(!raw){toast('NO SAVE FOUND');return}let v=JSON.parse(raw);if(![11,12,13].includes(v.version)||!Number.isInteger(v.stage)||v.stage<0||v.stage>missions.length)throw Error('invalid save');
+function loadGame(){try{resetMissionQuiz();let raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem(LEGACY_SAVE_KEY);if(!raw){toast('NO SAVE FOUND');return}let v=JSON.parse(raw);if(![11,12,13].includes(v.version)||!Number.isInteger(v.stage)||v.stage<0||v.stage>missions.length)throw Error('invalid save');
  storyMissionState=v.storyMissionState||freshStoryState();difficulty=DIFFICULTY[v.difficulty]?v.difficulty:'normal';gigCompleted=v.gigCompleted||0;vehicleUpgrade=v.vehicleUpgrade||0;gigRun=null;stage=v.stage;cash=v.cash;gpu=v.gpu;hype=v.hype;safety=v.safety;wanted=v.wanted;carrying=v.carrying;driving=v.driving;player=v.player;car=v.car;ownedProperties=v.ownedProperties||{};completedAssetMissions=v.completedAssetMissions||{};cycles=v.cycles||0;economyElapsed=v.economyElapsed||0;gigCooldown=v.gigCooldown||0;ipoComplete=!!v.ipoComplete;assetRun=v.assetRun||null;velocity=v.velocity||{x:0,y:0};cargoIntegrity=v.cargoIntegrity??100;rivalVans=[];cops=[{x:3900,y:2450},{x:3450,y:420}];arrestStart=0;deadline=0;checkpoint=null;lastFrameTime=0;running=true;closeModal();toast('SAVE LOADED · TIMED STORY MISSION RESET');
  }catch(e){toast('SAVE FILE INVALID')}}
 function chaseActive(){return (assetRun&&assetRun.id==='warehouse'&&assetRun.step>=1)||(stage===1&&carrying)}
@@ -107,7 +107,7 @@ function showDialog(w,t){const d=document.querySelector('#dialog');d.innerHTML='
 function toast(t){document.querySelector('#toast').textContent=t;document.querySelector('#toast').style.opacity=1;toastEnd=performance.now()+2200}
 function modal(title,body,buttons){locked=true;const el=document.querySelector('#modal');el.style.display='grid';document.querySelector('#panel').innerHTML='<h1>'+title+'</h1><p>'+body+'</p><div id="choices"></div><p><small>Fictional satire of public tech-industry themes.</small></p>';let ch=document.querySelector('#choices');buttons.forEach(b=>{let bt=document.createElement('button');bt.textContent=b.text;bt.className=b.alt?'alt':'';bt.onclick=b.fn;ch.append(bt)})}
 function closeModal(){document.querySelector('#modal').style.display='none';locked=false}
-function start(){storyMissionState=freshStoryState();resetVehicle();gigRun=null;gigCompleted=0;vehicleUpgrade=0;autoSaveElapsed=0;economyElapsed=0;lastFrameTime=0;gigCooldown=0;cycles=0;ipoComplete=false;ownedProperties={};assetRun=null;completedAssetMissions={};running=true;stage=0;cash=650;gpu=0;hype=15;safety=80;wanted=0;carrying=false;driving=false;player={x:800,y:1150};car={x:880,y:1170,a:0};cops=[{x:3900,y:2450},{x:3450,y:420}];deadline=0;arrestStart=0;checkpoint=null;missionStart=null;missionBannerUntil=performance.now()+2800;closeModal();showDialog('DARIO','Seven days until IPO. Jensen has the GPUs. Sam has the lawyers. I have a mission and a very optimistic valuation.');toast('NEW CAMPAIGN · THE IPO HEIST')}
+function start(){resetMissionQuiz();storyMissionState=freshStoryState();resetVehicle();gigRun=null;gigCompleted=0;vehicleUpgrade=0;autoSaveElapsed=0;economyElapsed=0;lastFrameTime=0;gigCooldown=0;cycles=0;ipoComplete=false;ownedProperties={};assetRun=null;completedAssetMissions={};running=true;stage=0;cash=650;gpu=0;hype=15;safety=80;wanted=0;carrying=false;driving=false;player={x:800,y:1150};car={x:880,y:1170,a:0};cops=[{x:3900,y:2450},{x:3450,y:420}];deadline=0;arrestStart=0;checkpoint=null;missionStart=null;missionBannerUntil=performance.now()+2800;closeModal();showDialog('DARIO','Seven days until IPO. Jensen has the GPUs. Sam has the lawyers. I have a mission and a very optimistic valuation.');toast('NEW CAMPAIGN · THE IPO HEIST')}
 function endingTitle(){if(Object.keys(ownedProperties).length===3&&Object.values(ownedProperties).every(o=>o.level===2)&&Object.keys(completedAssetMissions).length===3)return 'SECRET ENDING: THE VERTICAL MONOPOLY';if(hype>=85&&safety>=70&&gpu>=140)return 'CLAUDE EMPIRE ENDING';if(safety<55)return 'AGI MERGER ENDING';return 'THE IPO SURVIVES';}
 function endingDescription(){if(Object.keys(ownedProperties).length===3&&Object.values(ownedProperties).every(o=>o.level===2)&&Object.keys(completedAssetMissions).length===3)return 'Dario owns every business in AI Vice City. Jensen and Alice send the CUDA renewal invoice from their yacht.';if(hype>=85&&safety>=70&&gpu>=140)return 'Claude rules the benchmarks. The safety team gets a vacation, pending seventeen approvals.';if(safety<55)return 'The market demands a merger. Sam brings a term sheet; Dario brings a very long model card.';return 'Anthropic rings the bell. Jensen and Alice win the GPU business either way.';}
 function advance(){const completedStage=stage;const m=missions[stage];showDialog(m.speaker,m.line);toast(m.reward);const e=m.effects||{};cash+=e.cash||0;gpu+=e.gpu||0;hype+=e.hype||0;safety+=e.safety||0;if(e.wanted!==undefined)wanted=e.wanted;if(e.carrying!==undefined)carrying=e.carrying;stage++;onStoryAdvance(completedStage);deadline=0;arrestStart=0;checkpoint=null;missionStart=null;missionBannerUntil=performance.now()+2600;if(stage===missions.length){ipoComplete=true;wanted=0;setTimeout(()=>modal('IPO <span>SUCCESS!</span>','Anthropic goes public! Cash: $'+cash+' · Compute: '+gpu+' · Hype: '+hype+'.<br><br><b>'+endingTitle()+'</b><br>'+endingDescription(),[{text:'CONTINUE FREE ROAM',fn:()=>{closeModal();toast('FREE ROAM · BUILD YOUR ASSET EMPIRE')}},{text:'NEW CAMPAIGN',alt:true,fn:start}]),1700)}}
@@ -121,7 +121,7 @@ function busted(){
  [{text:'RETRY MISSION',fn:retryMission},{text:'RESTART CAMPAIGN',alt:true,fn:start}]);
 }
 function retryMission(){
- resetStoryMission(stage);
+ resetMissionQuiz();resetStoryMission(stage);
  if(checkpoint){({cash,gpu,hype,safety,wanted,carrying}=checkpoint)}
  else {wanted=0;carrying=false;}
  driving=false;resetVehicle();arrestStart=0;deadline=0;missionStart=null;missionBannerUntil=performance.now()+2200;
@@ -132,28 +132,60 @@ function retryMission(){
  cops=[{x:3900,y:2450},{x:3450,y:420}];
  closeModal();toast('MISSION RESTARTED');
 }
-// DeepSeek R1: a short, replayable three-round efficiency challenge.
-const R1_ROUNDS=[
- {q:'ROUND 1/3 · Your GPU budget just got cut. What do you do?',options:['BUY MORE GPUs ON CREDIT','DISTILL A SMALLER MODEL','CANCEL THE BENCHMARK'],correct:1},
- {q:'ROUND 2/3 · Inference costs are rising. Which change helps?',options:['CACHE REPEATED REQUESTS','DOUBLE EVERY CONTEXT WINDOW','ADD MORE ANIMATED LOGOS'],correct:0},
- {q:'ROUND 3/3 · Investors want proof. What do you show?',options:['A BIGGER PARAMETER COUNT','A MYSTERIOUS LEADERBOARD SCREENSHOT','QUALITY PER DOLLAR ON A HELD-OUT TEST'],correct:2}
-];
-let r1Round=0;
-function openR1Challenge(){
- const round=R1_ROUNDS[r1Round];
- modal('THE <span>R1 GAMBIT</span>', 'Liang: “Efficiency beats a warehouse full of GPUs.”<br><br>'+round.q+'<br>Correct answers: '+r1Round+'/3',
- round.options.map((option,i)=>({text:option,alt:i!==round.correct,fn:()=>{
-  if(i!==round.correct){cash=Math.max(0,cash-50);hype=Math.max(0,hype-3);r1Round=0;closeModal();toast('R1 FAILED · -$50 · TRY AGAIN');return}
-  r1Round++;
-  if(r1Round===R1_ROUNDS.length){r1Round=0;closeModal();advance()}
-  else openR1Challenge();
- }})).concat([{text:'LEAVE CHALLENGE',alt:true,fn:()=>{r1Round=0;closeModal()}}]));
+// Mission minigames share one neutral-choice UI: never reveal the answer via styling.
+const MISSION_ROUNDS={
+  poker:[
+    {q:'Your GPU budget was cut in half. What is the best move?',options:['Buy more GPUs on credit','Distill a smaller model','Cancel the benchmark'],correct:1},
+    {q:'Inference costs are rising. Which change helps?',options:['Cache repeated requests','Double every context window','Add animated logos'],correct:0},
+    {q:'Investors demand proof of efficiency. Show them:',options:['Parameter count','An unverified leaderboard','Quality per dollar on held-out tests'],correct:2}
+  ],
+  approval:[
+    {q:'Google Form 17-B: Who can approve TPU access?',options:['The committee that approves committees','The cafeteria robot','A random benchmark leaderboard'],correct:0},
+    {q:'Form 17-C: The approval workflow is stuck. What do you submit?',options:['Another GPU invoice','A documented risk assessment','A dancing Gemini logo'],correct:1},
+    {q:'Final compliance audit: What belongs in the deployment record?',options:['Nothing, ship immediately','Only the marketing slogan','Owner, limits and rollback plan'],correct:2}
+  ],
+  zuck:[
+    {q:'Three identical Zucks appear. Which clue identifies the real dealmaker?',options:['Offers a concrete distribution agreement','Promises everyone is a hologram','Refuses to discuss the product'],correct:0},
+    {q:'The glasses collect user data. Which contract protects users?',options:['Unlimited silent collection','Clear consent and data minimization','Sell all data to the highest bidder'],correct:1},
+    {q:'Meta offers an open-weight release. What should Dario verify?',options:['The jacket color','The number of VR headsets','License terms and model evaluation'],correct:2}
+  ],
+  market:[
+    {q:'A competitor launches a model. What should the IPO team publish?',options:['A fake leaderboard','Reproducible benchmark results','A promise of AGI tomorrow'],correct:1},
+    {q:'GPU prices spike. What keeps the business viable?',options:['Track unit economics and optimize inference','Double spending with no plan','Hide the invoices'],correct:0},
+    {q:'Analysts ask about safety. What is the credible response?',options:['Remove the safety team','Change the subject','Show evaluations, mitigations and governance'],correct:2}
+  ],
+  grok:[
+    {q:'Elon wants to launch the server racks into orbit. Your response?',options:['Approve immediate launch','Keep compute on the ground with a tested backup','Ask a meme account to certify the rocket'],correct:1},
+    {q:'A Grok bot rewrites the route mid-delivery. Which route do you trust?',options:['The verified dispatch route','The most viral post','A random map screenshot'],correct:0}
+  ]
+};
+let missionQuiz={stage:-1,round:0};
+function resetMissionQuiz(){missionQuiz={stage:-1,round:0}}
+function openMissionQuiz(kind){
+ if(missionQuiz.stage!==stage)missionQuiz={stage,round:0};
+ const rounds=MISSION_ROUNDS[kind],round=rounds[missionQuiz.round];
+ const heading={poker:'THE R1 GAMBIT',approval:'FORM 17-B',zuck:'FIND ZUCK',market:'THE MARKET',grok:'THE GROKFATHER'}[kind];
+ const prefix=kind==='market'?'IPO BOARD CHALLENGE':kind==='grok'?'COLOSSUS DISPATCH':'MISSION CHALLENGE';
+ modal(heading,'<b>'+prefix+' · '+(missionQuiz.round+1)+'/'+rounds.length+'</b><br><br>'+round.q,
+ round.options.map((option,i)=>({text:option,fn:()=>{
+   if(i!==round.correct){
+     const penalty=kind==='market'?75:kind==='poker'?50:25;
+     cash=Math.max(0,cash-penalty);hype=Math.max(0,hype-2);
+     resetMissionQuiz();closeModal();toast('INCORRECT · -$'+penalty+' · RETRY THE CHALLENGE');return;
+   }
+   missionQuiz.round++;
+   if(missionQuiz.round>=rounds.length){
+     resetMissionQuiz();closeModal();
+     if(kind==='market'&&(gpu<100||safety<40)){toast('IPO NOT READY · NEED 100 COMPUTE AND 40 SAFETY');return}
+     advance();
+   }else openMissionQuiz(kind);
+ }})).concat([{text:'LEAVE CHALLENGE',alt:true,fn:()=>{resetMissionQuiz();closeModal()}}]));
 }
-function challenge(m){if(m.kind==='poker')openR1Challenge();
-else if(m.kind==='approval')modal('FORM <span>17-B</span>','Google procurement: “Before approving your TPU request, please approve the approval workflow.”',[{text:'APPROVE THE APPROVAL',fn:()=>modal('FORM <span>17-C</span>','“Now confirm that the approval was approved.”',[{text:'CONFIRM APPROVAL',fn:()=>{closeModal();advance()}}])},{text:'ESCAPE THE MEETING',alt:true,fn:()=>{closeModal();toast('REQUEST DENIED · PLEASE REAPPLY')}}]);
-else if(m.kind==='zuck')modal('FIND <span>ZUCK</span>','Three identical figures in smart glasses. Which one is the real Zuck?',[{text:'THE ONE TALKING ABOUT METAVERSE',alt:true,fn:()=>{closeModal();toast('AI DOUBLE · TRY AGAIN')}},{text:'THE ONE SELLING SMART GLASSES',fn:()=>{closeModal();advance()}},{text:'THE ONE SAYING “OPEN SOURCE”',alt:true,fn:()=>{closeModal();toast('ANOTHER AI DOUBLE')}}]);
-else if(m.kind==='market')modal('THE <span>MARKET</span>','BOSS FIGHT: Three simultaneous headlines:<br>“Competitor launches new model!”<br>“GPU prices rise!”<br>“Analysts demand profits!”<br><br>What is your final move?',[{text:'PROMISE AGI NEXT TUESDAY',alt:true,fn:()=>{hype-=10;closeModal();toast('MARKET NOT IMPRESSED · -10 HYPE')}},{text:'SHOW REVENUE + COMPUTE + SAFETY',fn:()=>{if(gpu>=100&&safety>=40){closeModal();advance()}else{closeModal();toast('NOT READY · BUILD COMPUTE AND SAFETY')}}}]);
-else advance()}
+function challenge(m){
+ if(MISSION_ROUNDS[m.kind]){openMissionQuiz(m.kind);return}
+ if(stage===5){openMissionQuiz('grok');return}
+ advance();
+}
 function interact(){if(!running||locked)return;const interactionPos=driving?car:player;if(gigRun&&closeEntry(interactionPos,siteEntry(sites.find(s=>s.id===gigRun.target)))){finishGig();return}if(assetInteract())return;if(stage>=missions.length){const p=driving?car:player;const d=propertyDefs.find(q=>closeEntry(p,propertyEntry(q)));if(d){propertyMenu(d);return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FREE ROAM · [G] CONTRACTS · [B] ASSETS');return}const pos=driving?car:player,m=missions[stage],s=sites[m.site];const nearbyProperty=propertyDefs.find(d=>closeEntry(pos,propertyEntry(d)));if(nearbyProperty){propertyMenu(nearbyProperty);return;}if(closeEntry(pos,siteEntry(s))){if(handleStoryInteraction())return;if(m.kind==='delivery'||m.kind==='escape'){if(deadline&&performance.now()>deadline){fail();return}}challenge(m);return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}let site=sites.find(s=>closeEntry(pos,siteEntry(s)));if(site)showDialog(site.n,'Come back when the mission brings you here.');else toast('FIND THE GLOWING ENTRANCE · CHECK THE MINIMAP')}
 function nextTimer(){if(!checkpoint&&stage<missions.length)checkpoint={cash,gpu,hype,safety,wanted,carrying};if(stage<missions.length&&['delivery','escape'].includes(missions[stage].kind)&&!deadline){deadline=performance.now()+Math.round(missions[stage].time*DIFFICULTY[difficulty].timer)*1000;toast('⏱ COUNTDOWN STARTED!')}}
 document.querySelector('#start').onclick=start;const diffPicker=document.createElement('div');diffPicker.style.cssText='margin:10px 0;color:#d6e7f9;font:13px system-ui';diffPicker.innerHTML='DIFFICULTY: <select id=diff-select style="background:#182d40;color:#fff;padding:8px;border:1px solid #6ad9da;border-radius:8px"><option value=casual>CASUAL · Story mode</option><option value=normal selected>NORMAL · Balanced</option><option value=hard>HARD · Vice City</option></select>';document.querySelector('#start').before(diffPicker);document.querySelector('#start').addEventListener('click',()=>{difficulty=document.querySelector('#diff-select').value});const loadButton=document.createElement('button');loadButton.textContent='CONTINUE SAVED GAME';loadButton.className='alt';loadButton.onclick=loadGame;document.querySelector('#start').after(loadButton);addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!e.repeat)interact();if(k==='r'&&!e.repeat)start();if(k==='b'&&!e.repeat&&running&&!locked)portfolio();if(k==='g'&&!e.repeat)sideGig();if(k==='u'&&!e.repeat&&running&&!locked)garageMenu();if(k==='p'&&!e.repeat)saveGame();if(k==='l'&&!e.repeat)loadGame()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);document.querySelectorAll('#mobile button').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();if(k==='e')interact();else keys[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
