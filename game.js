@@ -132,7 +132,24 @@ function retryMission(){
  cops=[{x:3900,y:2450},{x:3450,y:420}];
  closeModal();toast('MISSION RESTARTED');
 }
-function challenge(m){if(m.kind==='poker')modal('THE <span>R1 GAMBIT</span>','Liang: “Pick the strongest hand. No, not the most expensive one.”<br><br>Which strategy wins the efficiency war?',[{text:'BUY 10,000 MORE GPUs',alt:true,fn:()=>{cash-=200;hype=Math.max(0,hype-8);closeModal();toast('EXPENSIVE BLUFF · -$200');}},{text:'DISTILL A SMALLER MODEL',fn:()=>{closeModal();advance()}}]);
+// DeepSeek R1: a short, replayable three-round efficiency challenge.
+const R1_ROUNDS=[
+ {q:'ROUND 1/3 · Your GPU budget just got cut. What do you do?',options:['BUY MORE GPUs ON CREDIT','DISTILL A SMALLER MODEL','CANCEL THE BENCHMARK'],correct:1},
+ {q:'ROUND 2/3 · Inference costs are rising. Which change helps?',options:['CACHE REPEATED REQUESTS','DOUBLE EVERY CONTEXT WINDOW','ADD MORE ANIMATED LOGOS'],correct:0},
+ {q:'ROUND 3/3 · Investors want proof. What do you show?',options:['A BIGGER PARAMETER COUNT','A MYSTERIOUS LEADERBOARD SCREENSHOT','QUALITY PER DOLLAR ON A HELD-OUT TEST'],correct:2}
+];
+let r1Round=0;
+function openR1Challenge(){
+ const round=R1_ROUNDS[r1Round];
+ modal('THE <span>R1 GAMBIT</span>', 'Liang: “Efficiency beats a warehouse full of GPUs.”<br><br>'+round.q+'<br>Correct answers: '+r1Round+'/3',
+ round.options.map((option,i)=>({text:option,alt:i!==round.correct,fn:()=>{
+  if(i!==round.correct){cash=Math.max(0,cash-50);hype=Math.max(0,hype-3);r1Round=0;closeModal();toast('R1 FAILED · -$50 · TRY AGAIN');return}
+  r1Round++;
+  if(r1Round===R1_ROUNDS.length){r1Round=0;closeModal();advance()}
+  else openR1Challenge();
+ }})).concat([{text:'LEAVE CHALLENGE',alt:true,fn:()=>{r1Round=0;closeModal()}}]));
+}
+function challenge(m){if(m.kind==='poker')openR1Challenge();
 else if(m.kind==='approval')modal('FORM <span>17-B</span>','Google procurement: “Before approving your TPU request, please approve the approval workflow.”',[{text:'APPROVE THE APPROVAL',fn:()=>modal('FORM <span>17-C</span>','“Now confirm that the approval was approved.”',[{text:'CONFIRM APPROVAL',fn:()=>{closeModal();advance()}}])},{text:'ESCAPE THE MEETING',alt:true,fn:()=>{closeModal();toast('REQUEST DENIED · PLEASE REAPPLY')}}]);
 else if(m.kind==='zuck')modal('FIND <span>ZUCK</span>','Three identical figures in smart glasses. Which one is the real Zuck?',[{text:'THE ONE TALKING ABOUT METAVERSE',alt:true,fn:()=>{closeModal();toast('AI DOUBLE · TRY AGAIN')}},{text:'THE ONE SELLING SMART GLASSES',fn:()=>{closeModal();advance()}},{text:'THE ONE SAYING “OPEN SOURCE”',alt:true,fn:()=>{closeModal();toast('ANOTHER AI DOUBLE')}}]);
 else if(m.kind==='market')modal('THE <span>MARKET</span>','BOSS FIGHT: Three simultaneous headlines:<br>“Competitor launches new model!”<br>“GPU prices rise!”<br>“Analysts demand profits!”<br><br>What is your final move?',[{text:'PROMISE AGI NEXT TUESDAY',alt:true,fn:()=>{hype-=10;closeModal();toast('MARKET NOT IMPRESSED · -10 HYPE')}},{text:'SHOW REVENUE + COMPUTE + SAFETY',fn:()=>{if(gpu>=100&&safety>=40){closeModal();advance()}else{closeModal();toast('NOT READY · BUILD COMPUTE AND SAFETY')}}}]);
