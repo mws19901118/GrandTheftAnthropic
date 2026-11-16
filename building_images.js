@@ -10,17 +10,18 @@
  function sprite(name,x,y,w,h){
   const im=images[name];if(!im||!im.complete||!im.naturalWidth)return false;
   const p=iso(x,y,0);
-  const naturalHeight=w*im.naturalHeight/im.naturalWidth;
-  ctx.drawImage(im,p.x-w/2,p.y-naturalHeight+40,w,naturalHeight);
+  ctx.drawImage(im,p.x-w/2,p.y-h+40,w,h);
   return true;
  }
  tower=function(s,i){
   const p=driving?car:player;
-  if(i===1){oldTower(s,i);return;} // Restore original NVIDIA illustration/animated depot.
   if(Math.abs(p.x-s.x)+Math.abs(p.y-s.y)>2900)return;
-  if(!sprite(main[i],s.x,s.y,365,315))oldTower(s,i);
+  if(!sprite(main[i],s.x,s.y,i===1?430:365,i===1?350:315))oldTower(s,i);
  };
- // warehouse_art.js owns the original NVIDIA depot and its overlays.
+ // NVIDIA's former standalone image was removed. The new depot PNG replaces it.
+ warehouseDetail=function(t){
+  if(!images.nvidia_depot.complete||!images.nvidia_depot.naturalWidth)oldWarehouse(t);
+ };
  window.drawPropertySprite=function(d){
   const p=driving?car:player;
   if(Math.abs(p.x-d.x)+Math.abs(p.y-d.y)>2450)return false;
