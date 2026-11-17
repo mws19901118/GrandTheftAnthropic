@@ -86,3 +86,56 @@
 #panel.cinematic-scene .scene-6{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/xai_colossus.webp'),url('assets/buildings/xai_colossus.png')}
 #panel.cinematic-scene .scene-8{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/meta_mall.webp'),url('assets/buildings/meta_mall.png')}
 #panel.cinematic-scene .scene-9{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/ipo_exchange.webp'),url('assets/buildings/ipo_exchange.png')}
+
+/* Cinematic compositing: ground the cast in the same light and perspective as the set. */
+#panel.cinematic-scene{--scene-rim:#8bbdd2;--scene-warm:#ffb36b;--floor-y:24%}
+#panel.cinematic-scene:has(.scene-0){--scene-rim:#9ae5a1;--scene-warm:#d4e7a0}
+#panel.cinematic-scene:has(.scene-2),#panel.cinematic-scene:has(.scene-3){--scene-rim:#d9a8f4;--scene-warm:#ffbd8c}
+#panel.cinematic-scene:has(.scene-4){--scene-rim:#b7a2ff;--scene-warm:#f5b56d}
+#panel.cinematic-scene:has(.scene-5),#panel.cinematic-scene:has(.scene-6){--scene-rim:#85caff;--scene-warm:#ff9a78}
+#panel.cinematic-scene:has(.scene-7){--scene-rim:#8fe0eb;--scene-warm:#d9e5fc}
+#panel.cinematic-scene:has(.scene-8){--scene-rim:#a6c6ff;--scene-warm:#f5b4e1}
+#panel.cinematic-scene:has(.scene-9){--scene-rim:#f6c0d6;--scene-warm:#f6c77c}
+#panel.cinematic-scene .scene-actors{
+  inset:14% 7% var(--floor-y);gap:clamp(8px,3vw,56px);
+  align-items:flex-end;isolation:isolate;perspective:1100px;
+}
+#panel.cinematic-scene .scene-actor{
+  position:relative;flex:0 1 29%;width:min(29vw,340px);
+  height:clamp(180px,58vh,650px);min-width:0;
+  transform:translateY(0) scale(.94);
+  transform-origin:center bottom;
+  filter:brightness(.82) saturate(.86);
+  transition:transform .28s ease,filter .28s ease;
+}
+#panel.cinematic-scene .scene-actor:nth-child(2){transform:translateY(7px) scale(.89)}
+#panel.cinematic-scene .scene-actor:nth-child(3){transform:translateY(13px) scale(.85)}
+#panel.cinematic-scene .scene-actor::before{
+  content:"";position:absolute;z-index:-1;bottom:-10px;left:13%;right:13%;
+  height:26px;border-radius:50%;background:#050711b8;
+  filter:blur(12px);transform:scaleX(1.15);
+}
+#panel.cinematic-scene .scene-actor::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 45%,color-mix(in srgb,var(--scene-rim) 15%,transparent) 100%);
+  mix-blend-mode:screen;opacity:.45;
+}
+#panel.cinematic-scene .scene-actors .scene-character-art{
+  width:100%;height:100%;max-height:100%;max-width:100%;
+  object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(2px 7px 4px #050713b0) drop-shadow(-2px 0 1px var(--scene-rim));
+}
+#panel.cinematic-scene .scene-actor.speaking{
+  transform:translateY(-4px) scale(1.015);
+  filter:brightness(1.04) saturate(1.04);
+}
+#panel.cinematic-scene .scene-backdrop::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to bottom,#060b1b44 0%,transparent 34%,#070b17aa 95%);
+  opacity:1;
+}
+@media(max-width:600px){
+ #panel.cinematic-scene .scene-actors{inset:17% 1% 31%;gap:0}
+ #panel.cinematic-scene .scene-actor{flex:0 1 33%;width:33vw;height:min(48vh,410px)}
+ #panel.cinematic-scene .scene-actor.speaking{transform:translateY(-3px) scale(1.04)}
+}
