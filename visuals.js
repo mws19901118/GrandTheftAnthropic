@@ -47,7 +47,7 @@
   }
  }
  function streetSign(x,y,title,accent){
-  let p=iso(x,y,105);ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#071425';ctx.fillRect(-58,-18,116,30);ctx.strokeStyle=accent;ctx.lineWidth=2;ctx.strokeRect(-58,-18,116,30);ctx.shadowColor=accent;ctx.shadowBlur=12;ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(title,0,2);ctx.restore();
+  let p=iso(x,y,105),base=iso(x,y,0);ctx.save();ctx.strokeStyle='#8b9ba4';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(p.x,p.y+12);ctx.stroke();ctx.translate(p.x,p.y);ctx.fillStyle='#071425';ctx.fillRect(-58,-18,116,30);ctx.strokeStyle=accent;ctx.lineWidth=2;ctx.strokeRect(-58,-18,116,30);ctx.shadowColor=accent;ctx.shadowBlur=12;ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(title,0,2);ctx.restore();
  }
  ground=function(){
   baseGround();
@@ -78,7 +78,7 @@
   }
   const s=sites[1];if(near(s.x,s.y,1700)){
    for(let i=-2;i<=2;i++)lamp(s.x+i*93,s.y+244,t,'#a4ff74');
-   streetSign(s.x-240,s.y+120,'COMPUTE DOCKS','#a0f76a');
+   streetSign(s.x+260,s.y-150,'CUDA LICENSED','#a0f76a');
    for(let i=0;i<9;i++){
     let x=s.x-310+(i%5)*74,y=s.y-290+Math.floor(i/5)*85;
     if(!restrictedSite(x,y)&&!roadSurface(x,y)){
