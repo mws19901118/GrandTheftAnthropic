@@ -176,6 +176,14 @@
    8:["ZUCK","That response has been recorded by your glasses. And by mine."],
    9:["THE MARKET","THE MARKET HAS HEARD YOU. THE MARKET REMAINS IRRATIONALLY EXCITED."]
   };
+  // A short branching exchange, not a single generic reaction. Keep outcomes in the original callbacks.
+  const branchFollowups={
+   poker:{right:["DARIO","So the secret ingredient is fewer GPUs? Please do not tell Jensen."],wrong:["DARIO","I am starting to think the casino is running a more rigorous evaluation than we are."]},
+   approval:{right:["DARIO","Excellent. Is there a form to confirm the form was approved?"],wrong:["DARIO","We have somehow invented bureaucracy-as-a-service."]},
+   zuck:{right:["DARIO","Good. Now ask your clones to stop following me around the mall."],wrong:["DARIO","I knew the uncanny valley had a customer support desk."]},
+   market:{right:["DARIO","Great. We beat expectations by making expectations incomprehensible."],wrong:["DARIO","My portfolio just became a cautionary PowerPoint slide."]},
+   grok:{right:["DARIO","Wonderful. Can we keep one server rack on this planet?"],wrong:["DARIO","I preferred it when rockets only had mechanical failure modes."]}
+  };
   function replyFor(option,choiceIndex,choiceCount){
    const kind=missions[stage]&&missions[stage].kind;
    const quizKind=stage===5?'grok':kind;
@@ -184,18 +192,37 @@
     const roundIndex=typeof missionQuiz!=='undefined'?missionQuiz.round:0;
     const round=MISSION_ROUNDS[quizKind][roundIndex];
     if(round&&round.options&&round.options[choiceIndex]===option.text){
-     if(choiceIndex===round.correct)return pack.right;
-     return pack.wrong[choiceIndex%pack.wrong.length];
+     const correct=choiceIndex===round.correct;
+     const first=correct?pack.right:pack.wrong[choiceIndex%pack.wrong.length];
+     return [first,branchFollowups[quizKind][correct?'right':'wrong']];
     }
    }
    const generic=stageBanter[stage]||["DARIO","I am sure this will look terrific in the incident report."];
-   if(choiceCount<=1)return generic;
+   if(choiceCount<=1)return [generic];
+   const responses={
+    0:[
+     [["JENSEN","I admire the ambition. The allocation is still not a charity."],["ALICE","I have added 'aggressive optimism' to the purchase order."]],
+     [["JENSEN","A discount? In this economy? Even my leather jacket has surge pricing."],["DARIO","I will take that as a no with premium packaging."]],
+     [["ALICE","That plan has three legal interpretations, and none are comfortable."],["DARIO","Then let us pick the one with the smallest font."]]
+    ],
+    2:[
+     [["SAM","You call it a safety concern whenever someone else ships first."],["DARIO","And you call it openness whenever the door has a biometric lock."]],
+     [["SAM","You want access? That is adorable. We have a whole department for saying no."],["DARIO","I know. Half of them used to work for me."]],
+     [["SAM","Threats are not a benchmark, Dario."],["DARIO","Neither is a press release, but here we are."]]
+    ],
+    5:[
+     [["ELON","We can ship it today. Assuming the rocket, the servers and my timeline all agree."],["DARIO","That is the least reassuring dependency graph I have ever seen."]],
+     [["ELON","The mission is trending. Engineering will catch up."],["DARIO","I miss when launch readiness was measured in bolts."]]
+    ]
+   };
+   const stageReplies=responses[stage];
+   if(stageReplies)return stageReplies[Math.min(choiceIndex,stageReplies.length-1)];
    const suffix=[
-    "Bold. Let us find out whether the game engine agrees.",
-    "I respect the confidence. The lawyers have requested a moment.",
-    "A classic move. The shareholders are updating their group chat."
+    ["DARIO","I respect the confidence. The lawyers have requested a moment."],
+    ["DARIO","Bold. Let us see whether reality has the same patch notes."],
+    ["DARIO","The shareholders are already typing in all caps."]
    ];
-   return [generic[0],choiceIndex===0?generic[1]:suffix[(choiceIndex-1)%suffix.length]];
+   return [generic,suffix[choiceIndex%suffix.length]];
   }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
@@ -209,13 +236,15 @@
     button.onclick=()=>{
      if(token!==session)return;
      if(option.alt){panel.classList.remove('cinematic-panel','cinematic-scene');option.fn();return}
-     const reply=replyFor(option,choiceIndex,buttons.length);
+     const exchange=replyFor(option,choiceIndex,buttons.length);
      choices.replaceChildren();buttonsShown=[];
      speak('DARIO',option.text);
      hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
+     let beat=0;
      advance=()=>{
-      speak(reply[0],reply[1]);
-      advance=()=>{panel.classList.remove('cinematic-panel','cinematic-scene');advance=null;option.fn()};
+      if(beat<exchange.length){const [who,line]=exchange[beat++];speak(who,line);return}
+      panel.classList.remove('cinematic-panel','cinematic-scene');
+      advance=null;option.fn();
      };
     };
     choices.append(button);buttonsShown.push(button);
