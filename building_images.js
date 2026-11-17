@@ -33,9 +33,14 @@
   ctx.textAlign='center';ctx.font='900 12px system-ui';
   ctx.fillStyle=o?'#e9fff0':'#ffe3a0';
   ctx.shadowColor=d.color;ctx.shadowBlur=12;
-  ctx.fillText(d.name,q.x,q.y);
+  // The sprite itself identifies the building; avoid floating duplicate labels.
   const b=iso(d.x,d.y+102,9);
-  ctx.fillText(o?'LVL '+o.level:'$'+d.price,b.x,b.y);
+  ctx.fillText(o?'LVL '+o.level:'
+  if(o&&o.level===2){ctx.strokeStyle=d.color;ctx.lineWidth=3;ctx.strokeRect(q.x-50,q.y-17,100,24)}
+  ctx.restore();return true;
+ };
+})();
++d.price,b.x,b.y);
   if(o&&o.level===2){ctx.strokeStyle=d.color;ctx.lineWidth=3;ctx.strokeRect(q.x-50,q.y-17,100,24)}
   ctx.restore();return true;
  };
