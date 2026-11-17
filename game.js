@@ -29,15 +29,15 @@ function objectivePoint(){if(gigRun)return gigTarget();if(assetRun){let step=ass
 // Entry pads are intentionally on the SOUTH side of buildings, facing the nearest street.
 // Story and property coordinates remain unchanged.
 const ENTRY_RADIUS=112;
-function siteEntry(s){
- const access={anthropic:707,nvidia:1847,openai:2927,deepseek:707,gemini:1847,meta:2927,ipo:4117,xai:4117};
- return {x:access[s.id]??s.x,y:s.y+35,site:s,kind:'site',label:s.n};
-}
-function propertyEntry(p){
- const positions={warehouse:{x:707,y:2740},lab:{x:1500,y:620},cloud:{x:3400,y:798}};
- const e=positions[p.id]||{x:p.x,y:p.y+113};
- return {...e,property:p,kind:'property',label:p.name};
-}
+// Entrance positions are authored per building to match its frontage and reachable roads.
+const ENTRY_LOCATIONS={
+ anthropic:{x:780,y:1080},nvidia:{x:1880,y:1080},openai:{x:2960,y:1080},
+ deepseek:{x:920,y:2240},gemini:{x:2050,y:2240},meta:{x:3180,y:2240},
+ ipo:{x:4260,y:2240},xai:{x:4260,y:2860},
+ warehouse:{x:780,y:2860},lab:{x:1650,y:510},cloud:{x:3330,y:735}
+};
+function siteEntry(s){return {...ENTRY_LOCATIONS[s.id],site:s,kind:'site',label:s.n}}
+function propertyEntry(p){return {...ENTRY_LOCATIONS[p.id],property:p,kind:'property',label:p.name}}
 function currentEntry(){if(gigRun){let s=gigTarget();return s&&siteEntry(s)}if(assetRun){const step=assetMissions[assetRun.id].steps[assetRun.step];if(!step)return null;const s=sites.find(s=>Math.hypot(s.x-step.x,s.y-step.y)<12);const p=propertyDefs.find(p=>Math.hypot(p.x-step.x,p.y-step.y)<12);return s?siteEntry(s):p?propertyEntry(p):{x:step.x,y:step.y,kind:'checkpoint',label:step.label}}if(stage<missions.length)return siteEntry(sites[missions[stage].site]);return null}
 function closeEntry(p,e,r=ENTRY_RADIUS){return !!e&&Math.hypot(p.x-e.x,p.y-e.y)<r}
 function nearestEntry(p){const all=[...sites.map(siteEntry),...propertyDefs.map(propertyEntry)];return all.filter(e=>closeEntry(p,e)).sort((a,b)=>Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(p.x-b.x,p.y-b.y))[0]||null}
