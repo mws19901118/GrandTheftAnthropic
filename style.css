@@ -52,3 +52,23 @@
 .scene-choices button{font-size:12px;padding:9px 12px;margin:0;background:#273653;border:1px solid #607392;color:white;text-align:left}
 .scene-choices button.selected,.scene-choices button:hover{background:#a73776;border-color:#ffd4e8}
 @media(max-width:600px){#panel.cinematic-scene{min-height:440px;height:85vh}.scene-actors{inset:10% 0 28%}.scene-actor{width:40%}.scene-caption{padding:12px;max-height:55%;overflow:auto}.scene-title{font-size:14px}.scene-choices button{font-size:11px;padding:7px 9px}}
+
+
+/* Full-viewport mission cinematics, including on mobile and desktop. */
+#modal:has(.cinematic-scene){position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:99999!important;display:grid!important;place-items:stretch!important;padding:0!important;margin:0!important;background:#080c19!important}
+#panel.cinematic-scene{box-sizing:border-box!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#panel.cinematic-scene .scene-backdrop{background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-actors{inset:10% 8% 22%;justify-content:center;gap:min(6vw,90px)}
+#panel.cinematic-scene .scene-actor{width:min(29vw,360px)}
+#panel.cinematic-scene .scene-caption{left:3%;right:3%;bottom:3%;min-height:clamp(125px,20vh,205px);box-sizing:border-box}
+#panel.cinematic-scene .scene-title{top:3%;left:3%;font-size:clamp(18px,3vw,32px)}
+#panel.cinematic-scene .scene-0{background-image:linear-gradient(0deg,#06151e55,#06151e15),url('assets/buildings/nvidia_depot.png');background-size:cover;background-position:center 55%}
+#panel.cinematic-scene .scene-2{background-image:linear-gradient(0deg,#19133399,#1c154455),url('assets/buildings/openai_club.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-4{background-image:linear-gradient(0deg,#1d123a99,#1d123a55),url('assets/buildings/deepseek_casino.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-5{background-image:linear-gradient(0deg,#16163199,#16163155),url('assets/buildings/xai_colossus.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-7{background-image:linear-gradient(0deg,#13243c99,#13243c55),url('assets/buildings/gemini_tower.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-8{background-image:linear-gradient(0deg,#13243c99,#13243c55),url('assets/buildings/meta_mall.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-9{background-image:linear-gradient(0deg,#27152f99,#27152f55),url('assets/buildings/ipo_exchange.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-backdrop:before{opacity:.25}
+#panel.cinematic-scene .scene-backdrop:after{opacity:.15}
+@media(max-width:600px){#panel.cinematic-scene .scene-actors{inset:13% 1% 29%;gap:0}#panel.cinematic-scene .scene-actor{width:45vw}#panel.cinematic-scene .scene-caption{left:2%;right:2%;bottom:2%;min-height:145px}}
