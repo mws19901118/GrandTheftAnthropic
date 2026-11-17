@@ -73,7 +73,7 @@
   const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
   for(const who of participants){
    const actor=document.createElement('div');actor.className='scene-actor';actor.dataset.who=who;
-   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice'};
+   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice',SAM:'sam',LIANG:'liang',ELON:'elon',SUNDAR:'sundar',ZUCK:'zuck','THE MARKET':'the_market'};
    if(artFiles[who]){
     const img=document.createElement('img');img.className='scene-character-art';
     img.alt=who+' illustrated character';img.src='assets/cutscenes/characters/'+artFiles[who]+'.png';
