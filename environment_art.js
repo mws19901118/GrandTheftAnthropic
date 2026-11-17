@@ -8,19 +8,15 @@
  const diamond=(x,y,w,h,z,color)=>quad([[x-w/2,y-h/2,z],[x+w/2,y-h/2,z],[x+w/2,y+h/2,z],[x-w/2,y+h/2,z]],color);
  const glow=(x,y,r,color,alpha=.18)=>{const p=iso(x,y,12);ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.42,0,0,Math.PI*2);ctx.fill();ctx.restore()};
  function stripe(x,y,angle,length,color,width=3){const a=iso(x-Math.cos(angle)*length/2,y-Math.sin(angle)*length/2,10),b=iso(x+Math.cos(angle)*length/2,y+Math.sin(angle)*length/2,10);stroke(a.x,a.y,b.x,b.y,color,width)}
+ // Base map already draws yellow lane stripes. Only add bridge guardrails.
  function paintedRoads(){
-  // Lane markings are deliberately sparse and broken at junctions.
-  for(let j=0;j<ROADS.length;j++){
-   const r=ROADS[j],horizontal=r.w>r.h,step=r.kind==='highway'?105:145;
+  for(const r of ROADS.filter(r=>r.kind==='bridge')){
    if(!visible(r.x+r.w/2,r.y+r.h/2,2100))continue;
-   for(let u=step/2;u<(horizontal?r.w:r.h)-30;u+=step){
-    const x=horizontal?r.x+u:r.x+r.w/2,y=horizontal?r.y+r.h/2:r.y+u;
-    if(!visible(x,y,1250))continue;
-    stripe(x,y,horizontal?0:Math.PI/2,46,r.kind==='highway'?'#f2d17f':'#d2e2e4',2.5);
-   }
-   if(r.kind==='bridge'){
-    for(let u=35;u<r.w;u+=95){const x=r.x+u;
-     for(const yy of [r.y+7,r.y+r.h-7]){const a=iso(x,yy,12),b=iso(x,yy,32);stroke(a.x,a.y,b.x,b.y,'#b8cbd7',3)}
+   for(let u=35;u<r.w;u+=95){
+    const x=r.x+u;
+    for(const yy of [r.y+7,r.y+r.h-7]){
+     const a=iso(x,yy,12),b=iso(x,yy,32);
+     stroke(a.x,a.y,b.x,b.y,'#b8cbd7',3);
     }
    }
   }
@@ -37,9 +33,20 @@
   }
  }
  function crosswalks(){
-  const nodes=[[1450,1100],[2530,1100],[3660,1100],[1450,2290],[2530,2290],[3660,2290],[1450,2890],[2530,2890]];
-  for(const [x,y] of nodes){if(!visible(x,y))continue;
-   for(let i=-3;i<=3;i++){diamond(x+i*12,y+74,7,30,11,'#d9e7e2a8');diamond(x+i*12,y-74,7,30,11,'#d9e7e2a8')}
+  const horizontals=ROADS.filter(r=>r.w>r.h&&r.kind!=='access');
+  const verticals=ROADS.filter(r=>r.h>r.w&&r.kind!=='access');
+  for(const h of horizontals)for(const v of verticals){
+   const cx=v.x+v.w/2,cy=h.y+h.h/2;
+   if(cx<h.x||cx>h.x+h.w||cy<v.y||cy>v.y+v.h||!visible(cx,cy))continue;
+   for(const side of [-1,1]){
+    const crossingX=cx+side*(v.w/2+16);
+    if(crossingX-8<h.x||crossingX+8>h.x+h.w)continue;
+    for(let k=-3;k<=3;k++){
+     const yy=cy+k*12;
+     if(yy-4<h.y||yy+4>h.y+h.h)continue;
+     diamond(crossingX,yy,20,7,11,'#e5eef0b8');
+    }
+   }
   }
  }
  function planter(x,y,n){
