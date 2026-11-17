@@ -209,15 +209,8 @@ function ground(){
   if(d.type==='park')for(let i=0;i<28;i++){let x=d.x+45+(i*109)%(d.w-90),y=d.y+35+(i*167)%(d.h-70);if(!roadSurface(x,y))prism(x,y,25,25,20,i%2?'#3c8b62':'#397d5b')}
   if(d.type==='industrial')for(let i=0;i<14;i++){let x=d.x+65+(i*157)%(d.w-120),y=d.y+55+(i*101)%(d.h-100);if(!roadSurface(x,y)&&!restrictedSite(x,y))prism(x,y,75,45,27,i%2?'#59636c':'#69616b')}
  }
- for(const r of ROADS){const c=r.kind==='highway'?'#364454':r.kind==='bridge'?'#536174':'#303c4d';quad([[r.x,r.y,6],[r.x+r.w,r.y,6],[r.x+r.w,r.y+r.h,6],[r.x,r.y+r.h,6]],c);
-  if(r.w>r.h){let cy=r.y+r.h/2;for(let x=r.x+24;x<r.x+r.w-20;x+=115)quad([[x,cy-2,8],[x+52,cy-2,8],[x+52,cy+2,8],[x,cy+2,8]],'#e8c775')}
-  else{let cx=r.x+r.w/2;for(let y=r.y+24;y<r.y+r.h-20;y+=115)quad([[cx-2,y,8],[cx+2,y,8],[cx+2,y+52,8],[cx-2,y+52,8]],'#e8c775')}
- }
- // City blocks are intentionally sparse and irregular, with gaps for exploration.
- for(let i=0;i<125;i++){let x=120+(i*487)%4520,y=110+(i*379)%3150;
-  if(roadSurface(x,y)||blockedTerrain(x,y)||restrictedSite(x,y)||DISTRICTS.some(d=>d.type==='park'&&inRect(x,y,d)))continue;
-  prism(x,y,28+(i%4)*12,25+(i%3)*14,18+(i%7)*10,i%2?'#2e5960':'#345367');
- }
+ // Road surfaces, curbs and lane markings are rendered by unified_world_art.js.
+
 }
 // Original procedural palms and lamps replaced by reusable environment sprites.
 function streetDetails(t){}
