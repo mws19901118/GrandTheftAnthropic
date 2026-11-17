@@ -15,7 +15,7 @@
   const status=line(c,'');const display=line(c,'');const controls=document.createElement('div');c.appendChild(controls);
   function next(){
    if(!overlay)return;round++;entry=[];seq=Array.from({length:Math.min(5,round+2)},()=>Math.floor(Math.random()*4));showing=true;const id=++token;status.textContent='LOCK '+round+'/3 · MEMORIZE THE SIGNALS';display.textContent='SIGNALS: '+seq.map(i=>colors[i]).join('  →  ');
-   controls.replaceChildren();btn(controls,'I HAVE MEMORIZED THE SEQUENCE',()=>{if(id!==token)return;showing=false;display.textContent='ENTER THE SEQUENCE';controls.replaceChildren();colors.forEach((color,i)=>btn(controls,color,()=>{entry.push(i);display.textContent='INPUT '+entry.map(n=>colors[n]).join(' → ');if(entry[entry.length-1]!==seq[entry.length-1]){cash=Math.max(0,cash-25);wanted=Math.max(wanted,1);status.textContent='ALARM TRIGGERED · -$25 · RESTART LOCK';next()}else if(entry.length===seq.length){if(round===3){clear();advance()}else next()}}))}) ;
+   controls.replaceChildren();btn(controls,'I HAVE MEMORIZED THE SEQUENCE',()=>{if(id!==token)return;showing=false;display.textContent='ENTER THE SEQUENCE';controls.replaceChildren();colors.forEach((color,i)=>btn(controls,color,()=>{entry.push(i);display.textContent='INPUT '+entry.map(n=>colors[n]).join(' → ');if(entry[entry.length-1]!==seq[entry.length-1]){cash=Math.max(0,cash-25);wanted=Math.max(wanted,1);status.textContent='ALARM TRIGGERED · -$25 · RESTART LOCK';round--;next()}else if(entry.length===seq.length){if(round===3){clear();advance()}else next()}}))}) ;
   }
   btn(c,'LEAVE VAULT',()=>{token++;clear()});next();
  }
