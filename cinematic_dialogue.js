@@ -12,8 +12,8 @@
  const scenes=[
   [['DARIO','The IPO clock is ticking. I need Blackwell chips, not another investor deck.'],['JENSEN','Welcome to the depot. Supply is limited. My leather jacket is not.'],['ALICE','Procurement has three options. Only two involve GPUs.']],
   [['DARIO','The cargo survived the road. The compliance report may not.']],
-  [['DARIO','Sam has the AGI file. I have an extremely temporary visitor badge.'],['SAM','Welcome to the rooftop. The board keeps changing the vault password.'],['SAM','Answer the security terminal carefully. Legal fees are non-refundable.']],
-  [['SAM','The board is voting again. Nobody remembers who is CEO.']],
+  [['DARIO','Nice rooftop, Sam. Did the board approve the view, or just your latest attempt to lock up the future?'],['SAM','Dario. I thought you were busy selling safety as a competitive advantage.'],['DARIO','And I thought you were busy calling a closed vault open progress. Hand over the AGI file.'],['SAM','You want my research and my compute? Try earning access instead of giving another speech about principles.'],['DARIO','Fine. Show me the terminal. Let us see whether your security is as strong as your press releases.'],['SAM','One wrong answer and Legal gets a new yacht. Your move.']],
+  [['SAM','The board is voting again. Unlike your safety committee, ours occasionally lets us ship something.']],
   [['LIANG','You brought a warehouse. I brought a spreadsheet.'],['DARIO','Fine. Let us compare quality per dollar.']],
   [['ELON','My compute is going to Mars. The route is trending.'],['DARIO','Can we keep the servers on Earth for one more quarter?']],
   [['DARIO','The rocket needs a CAPTCHA. Of course it does.']],
@@ -75,7 +75,9 @@
   // Only clean, production-ready files are eligible; *_reference.webp is never loaded.
   // Until each background has authored seating positions, never spawn a chair as part of a character sprite.
   const restPose='stand';
-  const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
+  // Stable blocking per location: never reassign left/right slots between dialogue beats.
+  const fixedCast={0:['DARIO','JENSEN','ALICE'],2:['DARIO','SAM'],3:['DARIO','SAM']};
+  const participants=(fixedCast[stage]||[...new Set(script.map(v=>v[0]).concat(['DARIO']))]).slice(0,3);
   const actorImages=new Map();
   for(const who of participants){
    const actor=document.createElement('div');actor.className='scene-actor';actor.dataset.who=who;
@@ -109,15 +111,11 @@
   function speak(who,msg){
    nameTag.textContent=who;dialogue.textContent=msg;
    const castOnStage=[...actors.children];
-   const speakerIndex=castOnStage.findIndex(actor=>actor.dataset.who===who);
    for(let i=0;i<castOnStage.length;i++){
     const actor=castOnStage[i],active=actor.dataset.who===who;
     actor.classList.toggle('speaking',active);
-    // Outer characters face inward; a middle character looks toward the speaker.
-    // Flip the portrait only, never the dialogue or the entire scene.
-    const faceLeft=castOnStage.length>1&&(i===castOnStage.length-1||
-      (i>0&&i<castOnStage.length-1&&speakerIndex>=0&&speakerIndex<i));
-    actor.classList.toggle('facing-left',faceLeft);
+    // Lock eyelines to the set: no mid-conversation mirroring or position jumps.
+    actor.classList.toggle('facing-left',i===castOnStage.length-1);
     setPose(actor.dataset.who,restPose);
    }
   }
