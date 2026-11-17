@@ -97,7 +97,8 @@
    for(let k=0;k<5;k++){const q=iso(s.x+(k-2)*22,s.y+15,z+26+k*9);ctx.fillStyle=k%2?'#ff5ca7':'#f4cb77';ctx.fillRect(q.x-7,q.y-8,14,8)}
   }
  }
- ground=function(){priorGround();paintedRoads();waterDetails(performance.now());crosswalks()};
+ window.drawWorldCrosswalks=crosswalks;
+ ground=function(){priorGround();paintedRoads();waterDetails(performance.now())};
  streetDetails=function(t){priorDetails(t);districtProps(t)};
  tower=function(s,i){priorTower(s,i);rooftop(s,i)};
 })();
