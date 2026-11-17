@@ -1,0 +1,36 @@
+{
+  "status": "concept-crops-not-production-ready",
+  "source": "newly generated GTA style character and scene sheet",
+  "characters": [
+    "dario",
+    "jensen",
+    "alice",
+    "sam",
+    "liang",
+    "elon",
+    "sundar",
+    "zuck",
+    "the_market"
+  ],
+  "poses": [
+    "stand",
+    "sit",
+    "gesture"
+  ],
+  "scenes": [
+    "nvidia_depot",
+    "openai_rooftop",
+    "deepseek_casino",
+    "xai_colossus",
+    "meta_mall",
+    "gemini_lab",
+    "anthropic_hq",
+    "ipo_exchange",
+    "market_floor"
+  ],
+  "limitations": [
+    "Characters have dark backdrops and labels; NOT transparent game-ready PNG",
+    "Scenes have baked labels and are low resolution",
+    "Do not overwrite existing game assets with these drafts"
+  ]
+}
