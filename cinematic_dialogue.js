@@ -96,7 +96,8 @@
    const request=++entry.request;
    const root='assets/cutscenes/characters/'+entry.slug;
    // Production pose WebP -> optional PNG pose -> original working portrait.
-   const candidates=pose==='stand'?[root+'_stand.webp',root+'.png']:[root+'_'+pose+'.webp',root+'_'+pose+'.png',root+'.png'];
+   // Jensen's current stand sprite has an awkward pose; use the previous approved portrait until redrawn.
+   const candidates=who==='JENSEN'?[root+'.png']:pose==='stand'?[root+'_stand.webp',root+'.png']:[root+'_'+pose+'.webp',root+'_'+pose+'.png',root+'.png'];
    let next=0;
    function tryNext(){
     if(request!==entry.request)return;
