@@ -25,16 +25,21 @@ function spawnRivals(){rivalVans=[{x:car.x+330,y:car.y+170,vx:0,vy:0},{x:car.x-2
 function updateRivals(dt,t){if(!chaseActive()){rivalVans=[];return}if(!rivalVans.length)spawnRivals();let target=driving?car:player;
  for(const v of rivalVans){let dx=target.x-v.x,dy=target.y-v.y,d=Math.hypot(dx,dy)||1;let rate=Math.min(1,dt/300),rivalSpeed=5.8*DIFFICULTY[difficulty].rivalSpeed;v.vx+=(dx/d*rivalSpeed-v.vx)*rate;v.vy+=(dy/d*rivalSpeed-v.vy)*rate;let nx=v.x+v.vx*dt/16.67,ny=v.y+v.vy*dt/16.67;if(validPoint(nx,v.y))v.x=nx;else v.vx*=-.5;if(validPoint(v.x,ny))v.y=ny;else v.vy*=-.5;
  if(d<68&&t-lastImpact>1100){cargoIntegrity=Math.max(0,cargoIntegrity-Math.ceil((driving?17:24)*DIFFICULTY[difficulty].damage));lastImpact=t;wanted=Math.max(wanted,2);toast('RIVAL RAMMED THE SHIPMENT · CARGO '+cargoIntegrity+'%');if(cargoIntegrity<=0){if(stage===1&&carrying)fail();else failAssetMission('CARGO DESTROYED');return}}}}
-function objectivePoint(){if(gigRun)return sites.find(s=>s.id===gigRun.target);if(assetRun){let step=assetMissions[assetRun.id].steps[assetRun.step];return step?{x:step.x,y:step.y}:null}return stage<missions.length?sites[missions[stage].site]:null}
+function objectivePoint(){if(gigRun)return gigTarget();if(assetRun){let step=assetMissions[assetRun.id].steps[assetRun.step];return step?{x:step.x,y:step.y}:null}return stage<missions.length?sites[missions[stage].site]:null}
 // Entry pads are intentionally on the SOUTH side of buildings, facing the nearest street.
 // Story and property coordinates remain unchanged.
 const ENTRY_RADIUS=112;
 function siteEntry(s){return {x:s.x,y:s.y+150,site:s,kind:'site',label:s.n}}
 function propertyEntry(p){return {x:p.x,y:p.y+113,property:p,kind:'property',label:p.name}}
-function currentEntry(){if(gigRun){let s=sites.find(s=>s.id===gigRun.target);return s&&siteEntry(s)}if(assetRun){const step=assetMissions[assetRun.id].steps[assetRun.step];if(!step)return null;const s=sites.find(s=>Math.hypot(s.x-step.x,s.y-step.y)<12);const p=propertyDefs.find(p=>Math.hypot(p.x-step.x,p.y-step.y)<12);return s?siteEntry(s):p?propertyEntry(p):{x:step.x,y:step.y,kind:'checkpoint',label:step.label}}if(stage<missions.length)return siteEntry(sites[missions[stage].site]);return null}
+function currentEntry(){if(gigRun){let s=gigTarget();return s&&siteEntry(s)}if(assetRun){const step=assetMissions[assetRun.id].steps[assetRun.step];if(!step)return null;const s=sites.find(s=>Math.hypot(s.x-step.x,s.y-step.y)<12);const p=propertyDefs.find(p=>Math.hypot(p.x-step.x,p.y-step.y)<12);return s?siteEntry(s):p?propertyEntry(p):{x:step.x,y:step.y,kind:'checkpoint',label:step.label}}if(stage<missions.length)return siteEntry(sites[missions[stage].site]);return null}
 function closeEntry(p,e,r=ENTRY_RADIUS){return !!e&&Math.hypot(p.x-e.x,p.y-e.y)<r}
 function nearestEntry(p){const all=[...sites.map(siteEntry),...propertyDefs.map(propertyEntry)];return all.filter(e=>closeEntry(p,e)).sort((a,b)=>Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(p.x-b.x,p.y-b.y))[0]||null}
-function entryPrompt(){const p=driving?car:player,e=nearestEntry(p),target=currentEntry();if(!e)return null;const active=target&&Math.hypot(e.x-target.x,e.y-target.y)<25;return {e,active,text:e.kind==='property'?'E · MANAGE '+e.label:active?'E · '+(driving?'USE LOADING BAY / ENTER':'ENTER / INTERACT')+' · '+e.label:'E · VISIT '+e.label}}
+function entryPrompt(){
+ const p=driving?car:player,e=nearestEntry(p),target=currentEntry();
+ if(!e)return null;
+ const active=!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25;
+ return {e,active,text:e.kind==='property'?'E · MANAGE '+e.label:active?'E · '+(gigRun?'CONTRACT CHECKPOINT':driving?'USE LOADING BAY / ENTER':'ENTER / INTERACT')+' · '+e.label:'E · VISIT '+e.label};
+}
 function drawEntryPad(e,t,active){const q=iso(e.x,e.y,9),pulse=.55+.45*Math.sin(t/340),color=active?'#ffdf75':e.kind==='property'?'#8cf5e3':'#9bacc9';ctx.save();ctx.translate(q.x,q.y);ctx.scale(1,.52);ctx.strokeStyle=color;ctx.lineWidth=active?6:3;ctx.shadowColor=color;ctx.shadowBlur=active?25:10;ctx.beginPath();ctx.arc(0,0,active?33+4*pulse:29,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=active?'#ffe9a0':'#e4e9f6';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.scale(1,1/.52);ctx.fillText(active?'MISSION':e.kind==='property'?'ASSET':'ENTRY',0,-33);ctx.restore()}
 function drawEntryPads(t){const target=currentEntry();const p=driving?car:player;for(const s of sites){const e=siteEntry(s);if(Math.hypot(e.x-p.x,e.y-p.y)<1100||target&&target.site===s)drawEntryPad(e,t,!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25)}for(const d of propertyDefs){const e=propertyEntry(d);if(Math.hypot(e.x-p.x,e.y-p.y)<950)drawEntryPad(e,t,!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25)}if(target&&target.kind==='checkpoint')drawEntryPad(target,t,true)}
 function drawEntryHint(){const hint=entryPrompt();const el=document.querySelector('#entry-hint');if(!el)return;if(!running||locked||!hint){el.style.display='none';return}el.style.display='block';el.textContent=hint.text}
@@ -43,16 +48,53 @@ let assetRun=null, completedAssetMissions={};
 // Economy time is measured in active gameplay, not wall-clock time.
 let economyElapsed=0, lastFrameTime=0, gigCooldown=0, cycles=0, ipoComplete=false;
 const ECONOMY_INTERVAL=45000;
+const GIG_CONTRACTS=[
+ {name:'GPU COURIER',cash:410,gpu:12,time:235,steps:[
+  {site:'nvidia',label:'PICK UP THE GPU CRATE',line:'JENSEN: No refunds on thermal paste.'},
+  {site:'openai',label:'VERIFY THE SERIAL NUMBERS',line:'DARIO: The spreadsheet says these GPUs are emotionally available.'},
+  {site:'anthropic',label:'DELIVER THE SHIPMENT',line:'ALICE: The safety review is complete. Mostly.'}]},
+ {name:'EFFICIENCY AUDIT',cash:360,hype:8,time:245,steps:[
+  {site:'deepseek',label:'COLLECT THE BENCHMARK DATA',line:'DARIO: Small model, enormous spreadsheet.'},
+  {site:'gemini',label:'CROSS-CHECK THE RESULTS',line:'GEMINI: The chart looks persuasive, which is not the same as correct.'},
+  {site:'anthropic',label:'SUBMIT THE AUDIT',line:'ALICE: Independent verification achieved.'}]},
+ {name:'COMPLIANCE EXPRESS',cash:390,safety:7,time:240,steps:[
+  {site:'anthropic',label:'PICK UP THE SAFETY REPORT',line:'ALICE: Do not lose the appendix.'},
+  {site:'gemini',label:'GET THE COMPLIANCE STAMP',line:'GEMINI: Please initial every page, including the blank ones.'},
+  {site:'ipo',label:'FILE THE REPORT',line:'DARIO: The market appreciates a stamped document.'}]},
+ {name:'BOARDROOM DOCUMENT DELIVERY',cash:440,hype:5,time:255,steps:[
+  {site:'openai',label:'COLLECT THE BOARD PACKET',line:'SAM: This is the final version. Probably.'},
+  {site:'meta',label:'OBTAIN THE LEGAL SIGNATURE',line:'META: We have reviewed the review.'},
+  {site:'ipo',label:'HAND OFF THE PACKET',line:'DARIO: Confidential paperwork successfully transported in a sports car.'}]}
+];
+function gigStep(){if(!gigRun)return null;return (gigRun.steps||[{site:gigRun.target,label:'DELIVER THE CONTRACT'}])[gigRun.step||0]}
+function gigTarget(){const step=gigStep();return step&&sites.find(s=>s.id===step.site)}
 function sideGig(){
  if(!running||locked)return;
- if(gigRun){toast('ACTIVE CONTRACT · DELIVER TO '+gigRun.target.toUpperCase());return}
+ if(gigRun){const step=gigStep();toast('ACTIVE CONTRACT · '+(step?step.label:'FINISH THE CONTRACT'));return}
  if(assetRun||deadline){toast('FINISH YOUR ACTIVE MISSION FIRST');return}
  if(gigCooldown>0){toast('CONTRACT BOARD COOLDOWN · '+Math.ceil(gigCooldown/1000)+'s');return}
- const pool=[{target:'nvidia',name:'GPU COURIER',cash:310,gpu:12},{target:'deepseek',name:'EFFICIENCY AUDIT',cash:260,hype:8},{target:'gemini',name:'COMPLIANCE EXPRESS',cash:290,safety:7},{target:'openai',name:'BOARDROOM DOCUMENT DELIVERY',cash:340,hype:5}];
- const j=pool[gigCompleted%pool.length];gigRun={...j,remaining:Math.round(190*DIFFICULTY[difficulty].timer)*1000};
- toast('CONTRACT ACCEPTED · '+j.name);showDialog('FREELANCE CONTRACT', 'Drive to '+sites.find(s=>s.id===j.target).n+' and press E. Time limit: '+Math.ceil(gigRun.remaining/1000)+' seconds.');
+ const j=GIG_CONTRACTS[gigCompleted%GIG_CONTRACTS.length];
+ gigRun={...j,step:0,remaining:Math.round(j.time*DIFFICULTY[difficulty].timer)*1000};
+ const target=gigTarget();
+ toast('CONTRACT ACCEPTED · '+j.name);
+ showDialog('FREELANCE CONTRACT',j.name+' · 1/'+j.steps.length+' · '+j.steps[0].label+' at '+target.n+'. Press E at the entrance. Time limit: '+Math.ceil(gigRun.remaining/1000)+' seconds.');
 }
-function finishGig(){if(!gigRun)return;let j=gigRun;cash+=j.cash;gpu+=j.gpu||0;hype+=j.hype||0;safety=Math.min(100,safety+(j.safety||0));gigRun=null;gigCompleted++;gigCooldown=12000;toast('CONTRACT COMPLETE · +$'+j.cash);showDialog('CONTRACT PAID',j.name+' delivered. Your accountant has requested a less exciting job.');}
+function finishGig(){
+ if(!gigRun)return;
+ const step=gigStep();
+ if(step&&step.line)showDialog('CONTRACT · '+(gigRun.step+1)+'/'+gigRun.steps.length,step.line);
+ gigRun.step=(gigRun.step||0)+1;
+ if(gigRun.step<gigRun.steps.length){
+  const next=gigStep(),target=gigTarget();
+  toast('CHECKPOINT COMPLETE · '+next.label);
+  showDialog('NEXT CONTRACT STOP',next.label+' · '+target.n+' · '+Math.ceil(gigRun.remaining/1000)+'s left.');
+  return;
+ }
+ const j=gigRun;cash+=j.cash;gpu+=j.gpu||0;hype+=j.hype||0;safety=Math.min(100,safety+(j.safety||0));
+ gigRun=null;gigCompleted++;gigCooldown=12000;
+ toast('CONTRACT COMPLETE · +$'+j.cash);
+ showDialog('CONTRACT PAID',j.name+' completed all checkpoints. Payment received.');
+}
 function failGig(){if(!gigRun)return;gigRun=null;gigCooldown=7000;toast('CONTRACT EXPIRED · TRY AGAIN');}
 function garageMenu(){modal('VEHICLE <span>GARAGE</span>','Upgrade your getaway car for better acceleration and a higher top speed. Current engine: '+(vehicleUpgrade?'TURBO':'STOCK')+'.',[{text:vehicleUpgrade?'TURBO ALREADY INSTALLED':'INSTALL TURBO · $'+GARAGE.upgrade,fn:()=>{if(vehicleUpgrade){toast('ALREADY INSTALLED');return}if(cash<GARAGE.upgrade){toast('NOT ENOUGH CASH');return}cash-=GARAGE.upgrade;vehicleUpgrade=1;closeModal();toast('TURBO INSTALLED · ROAD SPEED +18%')}},{text:'CLOSE',alt:true,fn:closeModal}])}
 
@@ -186,7 +228,7 @@ function challenge(m){
  if(stage===5){openMissionQuiz('grok');return}
  advance();
 }
-function interact(){if(!running||locked)return;const interactionPos=driving?car:player;if(gigRun&&closeEntry(interactionPos,siteEntry(sites.find(s=>s.id===gigRun.target)))){finishGig();return}if(assetInteract())return;if(stage>=missions.length){const p=driving?car:player;const d=propertyDefs.find(q=>closeEntry(p,propertyEntry(q)));if(d){propertyMenu(d);return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FREE ROAM · [G] CONTRACTS · [B] ASSETS');return}const pos=driving?car:player,m=missions[stage],s=sites[m.site];const nearbyProperty=propertyDefs.find(d=>closeEntry(pos,propertyEntry(d)));if(nearbyProperty){propertyMenu(nearbyProperty);return;}if(closeEntry(pos,siteEntry(s))){if(handleStoryInteraction())return;if(m.kind==='delivery'||m.kind==='escape'){if(deadline&&performance.now()>deadline){fail();return}}challenge(m);return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}let site=sites.find(s=>closeEntry(pos,siteEntry(s)));if(site)showDialog(site.n,'Come back when the mission brings you here.');else toast('FIND THE GLOWING ENTRANCE · CHECK THE MINIMAP')}
+function interact(){if(!running||locked)return;const interactionPos=driving?car:player;if(gigRun&&gigTarget()&&closeEntry(interactionPos,siteEntry(gigTarget()))){finishGig();return}if(assetInteract())return;if(stage>=missions.length){const p=driving?car:player;const d=propertyDefs.find(q=>closeEntry(p,propertyEntry(q)));if(d){propertyMenu(d);return}const visit=sites.find(q=>closeEntry(p,siteEntry(q)));if(visit){showDialog(visit.n,'Welcome to '+visit.n+'. No active story mission here. Explore the city or press G for a freelance contract.');return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FREE ROAM · [G] CONTRACTS · [B] ASSETS');return}const pos=driving?car:player,m=missions[stage],s=sites[m.site];const nearbyProperty=propertyDefs.find(d=>closeEntry(pos,propertyEntry(d)));if(nearbyProperty){propertyMenu(nearbyProperty);return;}if(closeEntry(pos,siteEntry(s))){if(handleStoryInteraction())return;if(m.kind==='delivery'||m.kind==='escape'){if(deadline&&performance.now()>deadline){fail();return}}challenge(m);return}let site=sites.find(q=>closeEntry(pos,siteEntry(q)));if(site){showDialog(site.n,'Welcome to '+site.n+'. No active story mission here. Explore the city or press G for a freelance contract.');return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FIND THE GLOWING ENTRANCE · CHECK THE MINIMAP')}
 function nextTimer(){if(!checkpoint&&stage<missions.length)checkpoint={cash,gpu,hype,safety,wanted,carrying};if(stage<missions.length&&['delivery','escape'].includes(missions[stage].kind)&&!deadline){deadline=performance.now()+Math.round(missions[stage].time*DIFFICULTY[difficulty].timer)*1000;toast('⏱ COUNTDOWN STARTED!')}}
 document.querySelector('#start').onclick=start;const diffPicker=document.createElement('div');diffPicker.style.cssText='margin:10px 0;color:#d6e7f9;font:13px system-ui';diffPicker.innerHTML='DIFFICULTY: <select id=diff-select style="background:#182d40;color:#fff;padding:8px;border:1px solid #6ad9da;border-radius:8px"><option value=casual>CASUAL · Story mode</option><option value=normal selected>NORMAL · Balanced</option><option value=hard>HARD · Vice City</option></select>';document.querySelector('#start').before(diffPicker);document.querySelector('#start').addEventListener('click',()=>{difficulty=document.querySelector('#diff-select').value});const loadButton=document.createElement('button');loadButton.textContent='CONTINUE SAVED GAME';loadButton.className='alt';loadButton.onclick=loadGame;document.querySelector('#start').after(loadButton);addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!e.repeat)interact();if(k==='r'&&!e.repeat)start();if(k==='b'&&!e.repeat&&running&&!locked)portfolio();if(k==='g'&&!e.repeat)sideGig();if(k==='u'&&!e.repeat&&running&&!locked)garageMenu();if(k==='p'&&!e.repeat)saveGame();if(k==='l'&&!e.repeat)loadGame()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);document.querySelectorAll('#mobile button').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();if(k==='e')interact();else keys[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
 function rect(a,b,w,h,c){ctx.fillStyle=c;ctx.fillRect(a,b,w,h)}function label(t,a,b,size=13,color='#fff'){ctx.fillStyle=color;ctx.font='bold '+size+'px system-ui';ctx.textAlign='center';ctx.fillText(t,a,b)}
