@@ -151,3 +151,20 @@
 #panel.cinematic-scene .scene-actor.facing-left .cin-bust{
  transform:scaleX(-1);
 }
+
+/* Preserve physical blocking: speaking should brighten, not jump forward or resize. */
+#panel.cinematic-scene .scene-actor.speaking,
+#panel.cinematic-scene .scene-actor:nth-child(2).speaking,
+#panel.cinematic-scene .scene-actor:nth-child(3).speaking{
+ transform:translateY(0) scale(.94);
+ filter:brightness(1.06) saturate(1.03);
+}
+#panel.cinematic-scene .scene-actor:nth-child(2),
+#panel.cinematic-scene .scene-actor:nth-child(2).speaking{transform:translateY(7px) scale(.89)}
+#panel.cinematic-scene .scene-actor:nth-child(3),
+#panel.cinematic-scene .scene-actor:nth-child(3).speaking{transform:translateY(13px) scale(.85)}
+@media(max-width:600px){
+ #panel.cinematic-scene .scene-actor.speaking,
+ #panel.cinematic-scene .scene-actor:nth-child(2).speaking,
+ #panel.cinematic-scene .scene-actor:nth-child(3).speaking{filter:brightness(1.06) saturate(1.03)}
+}
