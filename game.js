@@ -242,6 +242,7 @@ function spriteCar(px,py,a,color){let p=iso(px,py,8);ctx.save();ctx.translate(p.
 function spritePerson(px,py){let p=iso(px,py,5);ctx.fillStyle='#080f24a0';ctx.beginPath();ctx.ellipse(p.x,p.y+5,14,7,0,0,7);ctx.fill();ctx.fillStyle='#e6a382';ctx.fillRect(p.x-8,p.y-27,16,24);ctx.fillStyle='#f1c6a5';ctx.beginPath();ctx.arc(p.x,p.y-34,9,0,7);ctx.fill();ctx.fillStyle='#f8d9ba';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('DARIO',p.x,p.y-51)}
 function draw(t){frame++;
  const delta=lastFrameTime?Math.min(100,t-lastFrameTime):0;lastFrameTime=t;
+ if(window.ambientCity)window.ambientCity.update(delta);
  if(running&&!locked){
   if(gigRun){gigRun.remaining-=delta;if(gigRun.remaining<=0)failGig()}if(assetRun){assetRun.remaining-=delta;if(assetRun.remaining<=0)failAssetMission('MISSION FAILED')}
   autoSaveElapsed+=delta;if(autoSaveElapsed>14000){autoSaveElapsed=0;saveGame(true)}
@@ -267,7 +268,8 @@ ctx.save();ctx.translate(offX,offY);ground();streetDetails(t);streetAccent();
 
 DISTRICTS.filter(d=>d.type!=='water').forEach(d=>{let p=iso(d.x+d.w/2,d.y+d.h/2,9);ctx.textAlign='center';ctx.font='900 19px system-ui';ctx.fillStyle='#e7e9fc90';ctx.fillText(d.name,p.x,p.y)});
 let drawables=propertyDefs.map(d=>({y:d.x+d.y,fn:()=>{if(window.drawPropertySprite&&window.drawPropertySprite(d))return;let o=ownedProperties[d.id],z=o&&o.level===2?115:65;prism(d.x,d.y,125,105,z,o?d.color:'#58677a');let a=iso(d.x,d.y,z+26);ctx.textAlign='center';ctx.font='bold 12px system-ui';ctx.fillStyle=o?'#fff':'#ffdca8';ctx.shadowColor=d.color;ctx.shadowBlur=o?12:0;ctx.fillText(d.name,a.x,a.y);ctx.shadowBlur=0;let b=iso(d.x,d.y+90,6);ctx.font='bold 12px system-ui';ctx.fillText(o?'LVL '+o.level:'$'+d.price,b.x,b.y)}}));
-let drawablesOld=sites.map((s,i)=>({y:s.x+s.y,fn:()=>{tower(s,i);if(i===1)warehouseDetail(t)}}));drawables.push(...drawablesOld);drawables.push({y:car.x+car.y,fn:()=>spriteCar(car.x,car.y,car.a,'#ff5ba9')});if(!driving)drawables.push({y:player.x+player.y,fn:()=>spritePerson(player.x,player.y)});cops.forEach(cp=>drawables.push({y:cp.x+cp.y,fn:()=>spriteCar(cp.x,cp.y,0,'#5b9dff')}));rivalVans.forEach(v=>drawables.push({y:v.x+v.y,fn:()=>spriteCar(v.x,v.y,Math.atan2(v.vy,v.vx),'#ff794a')}));drawables.sort((a,b)=>a.y-b.y).forEach(d=>d.fn());
+let drawablesOld=sites.map((s,i)=>({y:s.x+s.y,fn:()=>{tower(s,i);if(i===1)warehouseDetail(t)}}));drawables.push(...drawablesOld);drawables.push({y:car.x+car.y,fn:()=>spriteCar(car.x,car.y,car.a,'#ff5ba9')});if(!driving)drawables.push({y:player.x+player.y,fn:()=>spritePerson(player.x,player.y)});cops.forEach(cp=>drawables.push({y:cp.x+cp.y,fn:()=>spriteCar(cp.x,cp.y,0,'#5b9dff')}));rivalVans.forEach(v=>drawables.push({y:v.x+v.y,fn:()=>spriteCar(v.x,v.y,Math.atan2(v.vy,v.vx),'#ff794a')}));if(window.ambientCity)window.ambientCity.addDrawables(drawables);
+drawables.sort((a,b)=>a.y-b.y).forEach(d=>d.fn());
 drawEntryPads(t);
 drawStoryWorld(t,offX,offY);ctx.restore();minimap();drawEntryHint();drawStoryHud(t);
 if(running&&stage<missions.length&&t<missionBannerUntil){ctx.save();ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=15;ctx.fillStyle='#ffe3a2';ctx.font='900 22px system-ui';ctx.fillText(missions[stage].title,W/2,H*.22);ctx.restore()}
