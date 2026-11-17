@@ -7,6 +7,20 @@
  }
  const oldDetails=streetDetails;
  const props=[];
+ function intersectsRect(x,y,halfX,halfY,r,pad=0){
+  return x+halfX>r.x-pad&&x-halfX<r.x+r.w+pad&&y+halfY>r.y-pad&&y-halfY<r.y+r.h+pad;
+ }
+ function clearLot(x,y,type){
+  const half=type==='palm'?24:90;
+  const margin=type==='palm'?10:24;
+  if(x-half<0||y-half<0||x+half>WORLD.w||y+half>WORLD.h)return false;
+  if(ROADS.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
+  if(WATER.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
+  if(sites.some(q=>Math.abs(q.x-x)<half+160&&Math.abs(q.y-y)<half+135))return false;
+  if(propertyDefs.some(q=>Math.abs(q.x-x)<half+125&&Math.abs(q.y-y)<half+110))return false;
+  return true;
+ }
+
  // Deterministic, stable city dressing. Keep road corridors and mission entrances open.
  const districts=[
   [300,520,6,3],[1110,650,4,2],[2240,1270,5,2],
@@ -17,7 +31,7 @@
   const [x,y,cols,rows]=districts[g];
   for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
    const px=x+i*137+(j%2)*31,py=y+j*155;
-   if(roadSurface(px,py)||blockedTerrain(px,py)||restrictedSite(px,py))continue;
+   if(!clearLot(px,py,(i+j+g)%3===0?'office':'shop'))continue;
    if(sites.some(s=>Math.hypot(s.x-px,s.y-py)<255))continue;
    if(propertyDefs.some(s=>Math.hypot(s.x-px,s.y-py)<180))continue;
    props.push({x:px,y:py,type:(i+j+g)%3===0?'office':'shop'});
@@ -25,7 +39,7 @@
  }
  for(let i=0;i<68;i++){
   const x=95+(i*397)%4560,y=105+(i*293)%3160;
-  if(roadSurface(x,y)||blockedTerrain(x,y)||restrictedSite(x,y))continue;
+  if(!clearLot(x,y,'palm'))continue;
   if(sites.some(s=>Math.hypot(s.x-x,s.y-y)<220))continue;
   props.push({x,y,type:'palm'});
  }
