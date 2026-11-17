@@ -18,7 +18,8 @@
   function answer(good){
    if(good){state.hqDefenseScore=(state.hqDefenseScore||0)+1;safety=Math.min(100,safety+3)}
    else{cash=Math.max(0,cash-50);safety=Math.max(0,safety-5)}
-   state.hqDefenseRound=i+1;showDialog(r.who,good?r.good:r.bad);play();
+   state.hqDefenseRound=i+1;
+   modal('HQ DEFENSE · '+r.who,good?r.good:r.bad,[{text:'CONTINUE DEFENSE',fn:play},{text:'PAUSE DEFENSE',alt:true,fn:closeModal}]);
   }
   modal('ANTHROPIC HQ · UNDER SIEGE',r.who+': '+r.q+' · DEFENSE '+(i+1)+'/3',
    [{text:r.yes,fn:()=>answer(true)},{text:r.no,fn:()=>answer(false)},{text:'RETREAT · RESUME LATER',alt:true,fn:closeModal}]);
