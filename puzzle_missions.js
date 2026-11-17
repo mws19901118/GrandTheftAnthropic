@@ -37,7 +37,16 @@
   btn(c,'LEAVE TOWER',clear);
  }
  const baseChallenge=challenge;
- challenge=function(m){if(m.kind==='approval'){if(!storyMissionState.googleIntroSeen){storyMissionState.googleIntroSeen=true;window.playMissionCutscene('TOO BIG TO PROMPT', [['SUNDAR','Of course you can use our TPUs. First, the risk assessment must approve the privacy review.'],['DARIO','And the capacity reservation?'],['SUNDAR','That depends on the risk assessment. The final signature depends on everything.'],['DARIO','So the boss fight is a dependency graph.']],()=>{closeModal();google()})}else google();return}return baseChallenge(m)};
+ challenge=function(m){if(m.kind==='approval'){if(!storyMissionState.googleIntroSeen){storyMissionState.googleIntroSeen=true;window.playMissionCutscene('TOO BIG TO PROMPT', [['SUNDAR','Of course you can use our TPUs. First, the risk assessment must approve the privacy review.'],['DARIO','And the capacity reservation?'],['SUNDAR','That depends on the risk assessment. The final signature depends on everything.'],['DARIO','So the boss fight is a dependency graph.']],()=>{closeModal();google()})}else google();return}if(['poker','zuck','market'].includes(m.kind)){
+   const scripts={
+    poker:[['LIANG','You brought a GPU warehouse. I brought a spreadsheet.'],['DARIO','Then let us compare quality per dollar, not leaderboard screenshots.'],['LIANG','Training, distillation and cache. Balance them without bankrupting your investors.']],
+    zuck:[['ZUCK','Welcome to Meta Mall. I have three versions of myself and only one signing authority.'],['DARIO','So this is an identity verification problem with a sunglasses budget.'],['ZUCK','Interview them. The real dealmaker has contracts, not just avatars.']],
+    market:[['THE MARKET','NEW MODEL! NEW BENCHMARK! NEW SELL ORDER!'],['DARIO','We have an IPO to survive, not a multiple-choice exam.'],['THE MARKET','Then defend your confidence, liquidity and compliance through three shocks.']]
+   };
+   const key=m.kind+'IntroSeen';
+   if(!storyMissionState[key]){storyMissionState[key]=true;window.playMissionCutscene(m.title,scripts[m.kind],()=>{closeModal();baseChallenge(m)});return}
+  }
+  return baseChallenge(m)};
  const baseHandle=handleStoryInteraction;
  handleStoryInteraction=function(){if(stage===2){if(!storyMissionState.openaiIntroSeen){storyMissionState.openaiIntroSeen=true;window.playMissionCutscene('THE EX-OPENAI FILES', [['DARIO','Nice rooftop, Sam. Did the board approve the view or just the vault?'],['SAM','You came for the AGI definition file. The board has changed the password three times since breakfast.'],['DARIO','I will decode the locks. You can explain to Legal why the file is called FINAL FINAL.'],['SAM','One alarm and the security team comes running. Do try to be discreet.']],()=>{closeModal();openai()})}else openai();return true}return baseHandle()};
 })();
