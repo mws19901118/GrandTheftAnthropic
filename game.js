@@ -173,7 +173,7 @@ function retryMission(){
  resetMissionQuiz();resetStoryMission(stage);
  if(checkpoint){({cash,gpu,hype,safety,carrying}=checkpoint)}
  // A retry starts a fresh attempt, never with the previous arrest meter or pursuers.
- wanted=stage===3?2:0;
+ wanted=0;
  if(stage===1)carrying=true;
  driving=false;resetVehicle();velocity={x:0,y:0};arrestStart=0;deadline=0;
  missionStart=null;checkpoint=null;lastImpact=0;cargoIntegrity=100;rivalVans=[];
