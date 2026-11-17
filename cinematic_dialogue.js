@@ -176,53 +176,81 @@
    8:["ZUCK","That response has been recorded by your glasses. And by mine."],
    9:["THE MARKET","THE MARKET HAS HEARD YOU. THE MARKET REMAINS IRRATIONALLY EXCITED."]
   };
-  // A short branching exchange, not a single generic reaction. Keep outcomes in the original callbacks.
-  const branchFollowups={
-   poker:{right:["DARIO","So the secret ingredient is fewer GPUs? Please do not tell Jensen."],wrong:["DARIO","I am starting to think the casino is running a more rigorous evaluation than we are."]},
-   approval:{right:["DARIO","Excellent. Is there a form to confirm the form was approved?"],wrong:["DARIO","We have somehow invented bureaucracy-as-a-service."]},
-   zuck:{right:["DARIO","Good. Now ask your clones to stop following me around the mall."],wrong:["DARIO","I knew the uncanny valley had a customer support desk."]},
-   market:{right:["DARIO","Great. We beat expectations by making expectations incomprehensible."],wrong:["DARIO","My portfolio just became a cautionary PowerPoint slide."]},
-   grok:{right:["DARIO","Wonderful. Can we keep one server rack on this planet?"],wrong:["DARIO","I preferred it when rockets only had mechanical failure modes."]}
+  // Responses track the actual mission option, not just the button position.
+  // A correct answer to one quiz round is not the same as clearing the mission.
+  const quizReactions={
+   poker:[
+    {right:["LIANG","Good. A smaller model that actually works beats a giant model that invoices you."],wrong:["LIANG","More debt is not an optimization algorithm. Neither is deleting the benchmark."]},
+    {right:["LIANG","Caching. The cheapest token is the one you do not generate twice."],wrong:["LIANG","That is a beautiful way to make every request more expensive."]},
+    {right:["LIANG","Held-out quality per dollar. Finally, a chart with two meaningful axes."],wrong:["LIANG","That is marketing, not evidence. The casino at least tells you the odds."]}
+   ],
+   approval:[
+    {right:["SUNDAR","Correct. You have identified the committee. You have not yet received approval."],wrong:["SUNDAR","Neither a cafeteria robot nor a leaderboard has signing authority. Yet."]},
+    {right:["SUNDAR","A documented risk assessment. Good. Form 17-C is now eligible to be reviewed."],wrong:["SUNDAR","A dancing logo is not a risk assessment. It is, however, a possible launch event."]},
+    {right:["SUNDAR","Owner, limits, rollback plan. The audit is satisfied. I can finally say approved."],wrong:["SUNDAR","The auditors need a rollback plan, not a slogan or an empty folder."]}
+   ],
+   zuck:[
+    {right:["ZUCK","A real distribution agreement. You found the version of me that can sign things."],wrong:["ZUCK","That one is a demo avatar. Great eye contact; absolutely no signing authority."]},
+    {right:["ZUCK","Consent and data minimization. Fine. The glasses will have to ask before remembering your lunch."],wrong:["ZUCK","No. Even in a satire, unlimited silent collection is a terrible contract."]},
+    {right:["ZUCK","License and evaluation checked. Now we can argue about what open actually means."],wrong:["ZUCK","Jacket color and headset counts do not tell you whether you can ship the model."]}
+   ],
+   market:[
+    {right:["THE MARKET","REPRODUCIBLE RESULTS! ANALYSTS HATE THAT THEY CAN CHECK THE MATH!"],wrong:["THE MARKET","A FAKE LEADERBOARD IS NOT AN EARNINGS STRATEGY!"]},
+    {right:["THE MARKET","UNIT ECONOMICS! THE MARKET HAS DISCOVERED DIVISION!"],wrong:["THE MARKET","YOU CANNOT HIDE INVOICES FROM A CASH-FLOW STATEMENT!"]},
+    {right:["THE MARKET","EVALUATIONS! MITIGATIONS! GOVERNANCE! THE UNDERWRITERS CAN EXHALE!"],wrong:["THE MARKET","REMOVING THE SAFETY TEAM IS NOT A SAFETY DISCLOSURE!"]}
+   ],
+   grok:[
+    {right:["ELON","Fine. Ground-based compute with a backup. The rocket team is disappointed."],wrong:["ELON","No. A meme account cannot certify orbital server racks. I checked."]},
+    {right:["ELON","Verified dispatch route. Boring, reliable, annoyingly correct."],wrong:["ELON","A viral post is not a navigation system. The server racks would end up in a podcast studio."]}
+   ],
+   terminal:[
+    {right:["SAM","You found the AGI definition. Do not get excited; the appendix is longer than the document."],wrong:["SAM","That is not the AGI file. You have just paid thirty-five dollars to open the wrong folder."]},
+    {right:["SAM","Correct. I was reinstated. Corporate governance: the reboot nobody asked for."],wrong:["SAM","No. The board did not become a GPU or move to Mars. That would have been simpler."]},
+    {right:["SAM","You cracked the passphrase. I cannot believe the appendix joke was the actual password."],wrong:["SAM","Wrong passphrase. The vault is now billing you for an unauthorized metaphor."]}
+   ]
   };
-  function replyFor(option,choiceIndex,choiceCount){
+  function quizContext(option,choiceIndex){
    const kind=missions[stage]&&missions[stage].kind;
    const quizKind=stage===5?'grok':kind;
-   const pack=choiceBanter[quizKind];
-   if(pack&&typeof MISSION_ROUNDS!=='undefined'&&MISSION_ROUNDS[quizKind]){
-    const roundIndex=typeof missionQuiz!=='undefined'?missionQuiz.round:0;
-    const round=MISSION_ROUNDS[quizKind][roundIndex];
-    if(round&&round.options&&round.options[choiceIndex]===option.text){
-     const correct=choiceIndex===round.correct;
-     const first=correct?pack.right:pack.wrong[choiceIndex%pack.wrong.length];
-     return [first,branchFollowups[quizKind][correct?'right':'wrong']];
-    }
+   if(quizReactions[quizKind]&&typeof MISSION_ROUNDS!=='undefined'&&MISSION_ROUNDS[quizKind]){
+    const index=typeof missionQuiz!=='undefined'?missionQuiz.round:0;
+    const round=MISSION_ROUNDS[quizKind][index];
+    if(round&&round.options&&round.options[choiceIndex]===option.text)
+     return {kind:quizKind,index,correct:choiceIndex===round.correct,last:index===MISSION_ROUNDS[quizKind].length-1};
    }
-   const generic=stageBanter[stage]||["DARIO","I am sure this will look terrific in the incident report."];
-   if(choiceCount<=1)return [generic];
-   const responses={
-    0:[
-     [["JENSEN","I admire the ambition. The allocation is still not a charity."],["ALICE","I have added 'aggressive optimism' to the purchase order."]],
-     [["JENSEN","A discount? In this economy? Even my leather jacket has surge pricing."],["DARIO","I will take that as a no with premium packaging."]],
-     [["ALICE","That plan has three legal interpretations, and none are comfortable."],["DARIO","Then let us pick the one with the smallest font."]]
-    ],
-    2:[
-     [["SAM","You call it a safety concern whenever someone else ships first."],["DARIO","And you call it openness whenever the door has a biometric lock."]],
-     [["SAM","You want access? That is adorable. We have a whole department for saying no."],["DARIO","I know. Half of them used to work for me."]],
-     [["SAM","Threats are not a benchmark, Dario."],["DARIO","Neither is a press release, but here we are."]]
-    ],
-    5:[
-     [["ELON","We can ship it today. Assuming the rocket, the servers and my timeline all agree."],["DARIO","That is the least reassuring dependency graph I have ever seen."]],
-     [["ELON","The mission is trending. Engineering will catch up."],["DARIO","I miss when launch readiness was measured in bolts."]]
-    ]
+   if(stage===2&&typeof TERMINAL_STEPS!=='undefined'&&typeof storyMissionState!=='undefined'){
+    const index=storyMissionState.terminal;
+    const round=TERMINAL_STEPS[index];
+    if(round&&round.options&&round.options[choiceIndex]===option.text)
+     return {kind:'terminal',index,correct:choiceIndex===round.correct,last:index===TERMINAL_STEPS.length-1};
+   }
+   return null;
+  }
+  function replyFor(option,choiceIndex,choiceCount){
+   const context=quizContext(option,choiceIndex);
+   if(context){
+    const {kind,index,correct,last}=context;
+    const line=quizReactions[kind][index][correct?'right':'wrong'];
+    if(!correct){
+     const fee=kind==='terminal'?35:kind==='market'?75:kind==='poker'?50:25;
+     return [line,["DARIO","That mistake just cost us $"+fee+". The lesson was apparently not included in the tuition."]];
+    }
+    if(last)return [line,["DARIO",kind==='terminal'?"File acquired. Now comes the part where we run.":"That was the final check. Let us see if the mission agrees."]];
+    return [line,["DARIO","One checkpoint down. What is next?"]];
+   }
+   if(stage===0){
+    if(choiceIndex===0)return [["JENSEN","Full price. Sensible. I knew there was a reason I liked your procurement team."],["ALICE","I will put the leather jacket surcharge under 'essential infrastructure'."]];
+    if(choiceIndex===1)return [["JENSEN","A safety discount? Fine. But the GPUs do not get to take a safety day."],["ALICE","One hundred dollars saved. Five points of hype lost. Finance calls that a balanced trade."]];
+   }
+   const stageLines={
+    1:[["ALICE","Please deliver the crates intact. 'GPU confetti' is not an accepted inventory status."]],
+    3:[["SAM","I would escort you out, but the board is voting on whether doors are a governance issue."]],
+    5:[["ELON","The servers are staying on Earth. I am announcing a Mars version anyway."]],
+    6:[["DARIO","The rocket may be delayed, but our liability exposure is right on schedule."]]
    };
-   const stageReplies=responses[stage];
-   if(stageReplies)return stageReplies[Math.min(choiceIndex,stageReplies.length-1)];
-   const suffix=[
-    ["DARIO","I respect the confidence. The lawyers have requested a moment."],
-    ["DARIO","Bold. Let us see whether reality has the same patch notes."],
-    ["DARIO","The shareholders are already typing in all caps."]
-   ];
-   return [generic,suffix[choiceIndex%suffix.length]];
+   if(stageLines[stage])return stageLines[stage];
+   if(choiceCount<=1)return [];
+   return [["DARIO","That is a choice. The incident report will have a very specific footnote."]];
   }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
@@ -238,7 +266,8 @@
      if(option.alt){panel.classList.remove('cinematic-panel','cinematic-scene');option.fn();return}
      const exchange=replyFor(option,choiceIndex,buttons.length);
      choices.replaceChildren();buttonsShown=[];
-     speak('DARIO',option.text);
+     const context=quizContext(option,choiceIndex);
+     speak(context?'DARIO':'DARIO',context?'I am going with: '+option.text:option.text);
      hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
      let beat=0;
      advance=()=>{
