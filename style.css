@@ -79,3 +79,10 @@
 #panel.cinematic-scene .scene-2{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/openai_rooftop.webp'),url('assets/buildings/openai_club.png')}
 #panel.cinematic-scene .scene-4{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/deepseek_casino.webp'),url('assets/buildings/deepseek_casino.png')}
 #panel.cinematic-scene .scene-actors .scene-character-art{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(6px 8px 2px #050a18bb)}
+
+
+/* Phase 2 cutscene scenes: preserve original building images as fallback. */
+#panel.cinematic-scene .scene-5{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/xai_colossus.webp'),url('assets/buildings/xai_colossus.png')}
+#panel.cinematic-scene .scene-6{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/xai_colossus.webp'),url('assets/buildings/xai_colossus.png')}
+#panel.cinematic-scene .scene-8{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/meta_mall.webp'),url('assets/buildings/meta_mall.png')}
+#panel.cinematic-scene .scene-9{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/ipo_exchange.webp'),url('assets/buildings/ipo_exchange.png')}
