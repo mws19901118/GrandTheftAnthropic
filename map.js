@@ -4,7 +4,7 @@ const sites=[
  {id:'anthropic',x:780,y:950,n:'ANTHROPIC HQ',color:'#e6a77e'},
  {id:'nvidia',x:1880,y:950,n:'NVIDIA DEPOT',color:'#8bd34b'},
  {id:'openai',x:2960,y:950,n:'OPENAI CLUB',color:'#57d2b5'},
- {id:'xai',x:4150,y:950,n:'xAI COLOSSUS',color:'#8f93ff'},
+ {id:'xai',x:4150,y:2740,n:'xAI COLOSSUS',color:'#8f93ff'},
  {id:'deepseek',x:780,y:2100,n:'DEEPSEEK CASINO',color:'#4dbde9'},
  {id:'gemini',x:1880,y:2100,n:'GEMINI TOWER',color:'#f5c960'},
  {id:'meta',x:2960,y:2100,n:'META MALL',color:'#559dff'},
@@ -44,8 +44,21 @@ const ROADS=[
  {x:2880,y:2230,w:95,h:620,kind:'access'},
  {x:4070,y:2230,w:95,h:620,kind:'access'}
 ];
+// Non-grid diagonal connectors, represented as short world-space polylines.
+const CURVED_ROADS=[
+ {points:[[1080,1700],[1160,1800],[1250,1950],[1380,2230]],width:82,kind:'local'},
+ {points:[[3100,1700],[3240,1830],[3450,2020],[3650,2290]],width:84,kind:'local'}
+];
+function distanceToSegment(x,y,a,b){
+ const dx=b[0]-a[0],dy=b[1]-a[1],len=dx*dx+dy*dy;
+ const t=Math.max(0,Math.min(1,len?((x-a[0])*dx+(y-a[1])*dy)/len:0));
+ return Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy);
+}
+function onCurvedRoad(x,y,pad=0){
+ return CURVED_ROADS.some(r=>r.points.some((p,i)=>i&&distanceToSegment(x,y,r.points[i-1],p)<=r.width/2+pad));
+}
 const WATER=[{x:0,y:0,w:1140,h:680},{x:0,y:680,w:320,h:200},{x:2200,y:0,w:260,h:740}];
 function inRect(x,y,r,pad=0){return x>=r.x-pad&&x<=r.x+r.w+pad&&y>=r.y-pad&&y<=r.y+r.h+pad}
-function roadSurface(x,y){return ROADS.some(r=>inRect(x,y,r))}
+function roadSurface(x,y){return ROADS.some(r=>inRect(x,y,r))||onCurvedRoad(x,y)}
 function blockedTerrain(x,y){return WATER.some(r=>inRect(x,y,r,8))&&!ROADS.some(r=>r.kind==='bridge'&&inRect(x,y,r))}
-function roadClass(x,y){const r=ROADS.find(r=>inRect(x,y,r));return r?r.kind:null}
+function roadClass(x,y){const r=ROADS.find(r=>inRect(x,y,r));return r?r.kind:onCurvedRoad(x,y)?'local':null}
