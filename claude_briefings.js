@@ -16,10 +16,56 @@
  function teleport(){const h=sites[0];driving=false;velocity={x:0,y:0};player={x:h.x+18,y:h.y+90};car={x:h.x+100,y:h.y+120,a:0};wanted=0;deadline=0;checkpoint=null}
  function dispatch(){
   const [title,msg]=briefing[stage];
-  modal('CLAUDE CODE · '+title,msg+'<br><br>DARIO: So this is what an AI agent means by “a quick task.”',[
-   {text:'ACCEPT ASSIGNMENT',fn:()=>{const list=storyMissionState.briefedStages||[];if(!list.includes(stage))list.push(stage);storyMissionState.briefedStages=list;closeModal();showDialog('DARIO','Assignment received. Time to turn this prompt into a very expensive road trip.');toast('CLAUDE CODE · NEW OBJECTIVE UNLOCKED')}},
-   {text:'REVIEW LATER',alt:true,fn:closeModal}
-  ]);
+  const terminal=document.createElement('div');
+  terminal.id='claude-code-terminal';
+  terminal.style.cssText='position:fixed;inset:0;z-index:11000;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(2,6,13,.94);color:#d7e4da;font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  const shell=document.createElement('div');
+  shell.style.cssText='width:min(850px,100%);max-height:92vh;overflow:auto;background:#11171b;border:1px solid #46534c;border-radius:12px;box-shadow:0 25px 90px #000;padding:0';
+  terminal.appendChild(shell);document.body.appendChild(terminal);
+  locked=true;
+  const top=document.createElement('div');
+  top.style.cssText='display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #334039;background:#1b2428;color:#a6b6ad';
+  top.innerHTML='<span style="color:#fa756d">●</span><span style="color:#f4c765">●</span><span style="color:#70c995">●</span><span style="margin-left:14px">dario@anthropic: ~/ipo-heist</span><span style="margin-left:auto;font-size:11px">LOCAL SIMULATION</span>';
+  shell.appendChild(top);
+  const log=document.createElement('div');log.style.cssText='padding:20px 24px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:300px';shell.appendChild(log);
+  const controls=document.createElement('div');controls.style.cssText='padding:12px 20px 20px;display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #334039';shell.appendChild(controls);
+  let alive=true,step=0;
+  const entries=[
+   ['dim','$ claude'],
+   ['accent','✳ Claude Code'],
+   ['dim','Working directory: /anthropic/ipo-heist'],
+   ['dim','Session: dario · local mission briefing'],
+   ['accent','> /mission '+String(stage+1).padStart(2,'0')+' --brief'],
+   ['dim','Reading mission context...'],
+   ['success','✓ City map loaded  ✓ Mission objectives synchronized'],
+   ['accent','MISSION: '+title],
+   ['normal',msg.replace(/^CLAUDE CODE:\s*/,'')],
+   ['dim','Risk check: '+(stage===4?'Unknown bot swarm; attribution unverified.':stage===9?'Market volatility; protect compliance.':'Use your judgment. The board will not.')],
+   ['accent','CLAUDE CODE: Dario, execute when ready.'],
+   ['normal','DARIO: So this is what an AI agent means by “a quick task.”'],
+   ['success','? Accept this assignment?']
+  ];
+  const palette={dim:'#81958b',accent:'#e9ae80',success:'#8fe1ad',normal:'#dce9df'};
+  function add(entry){const el=document.createElement('div');el.style.margin='3px 0';el.style.color=palette[entry[0]];el.textContent=entry[1];log.appendChild(el);shell.scrollTop=shell.scrollHeight}
+  function cleanup(){alive=false;terminal.remove();locked=false;document.removeEventListener('keydown',keyHandler,true)}
+  function accept(){
+   if(!alive)return;
+   const list=storyMissionState.briefedStages||[];
+   if(!list.includes(stage))list.push(stage);
+   storyMissionState.briefedStages=list;
+   cleanup();
+   showDialog('DARIO','Assignment received. Time to turn this prompt into a very expensive road trip.');
+   toast('CLAUDE CODE · NEW OBJECTIVE UNLOCKED');
+  }
+  function later(){if(alive){cleanup();toast('BRIEFING PAUSED · PRESS E TO REOPEN')}}
+  function button(label,fn){const el=document.createElement('button');el.textContent=label;el.style.cssText='padding:10px 15px;background:#293c33;color:#c8f5d4;border:1px solid #598b6d;border-radius:6px;font:inherit;cursor:pointer';el.onclick=fn;controls.appendChild(el)}
+  function ready(){if(!alive)return;controls.replaceChildren();button('❯ ACCEPT MISSION  [ENTER]',accept);button('REVIEW LATER  [ESC]',later)}
+  function revealAll(){while(step<entries.length)add(entries[step++]);ready()}
+  function keyHandler(e){if(!alive)return;if(['Enter','Escape',' '].includes(e.key)){e.preventDefault();e.stopImmediatePropagation();if(e.key==='Escape')later();else if(step<entries.length)revealAll();else accept()}}
+  document.addEventListener('keydown',keyHandler,true);
+  button('SKIP OUTPUT',revealAll);
+  function typeNext(){if(!alive)return;if(step<entries.length){add(entries[step++]);if(step===entries.length)ready();else setTimeout(typeNext,step<5?110:220)}}
+  typeNext();
  }
  const baseInteract=interact;
  interact=function(){
