@@ -10,7 +10,15 @@
   'THE MARKET':['#ff89c4','#55304d','$']
  };
  const scenes=[
-  [['DARIO','I need Blackwell chips, Jensen. Not a keynote, not a waitlist, and definitely not another investor deck.'],['JENSEN','Everybody wants Blackwell. You want priority? Tell me why your next model deserves my next shipment.'],['DARIO','Because if we wait for your supply chain, the IPO will be a historical reenactment.'],['JENSEN','Then stop negotiating like you own the warehouse. You do not even own the forklift.'],['ALICE','Jensen, darling, you promised me the private allocation would stay private. Especially the part with the heart-shaped approval stamp.'],['JENSEN','Alice. We agreed never to discuss that stamp in front of customers.'],['DARIO','I came for Blackwell, not a Silicon Valley soap opera. Though the pricing suddenly makes sense.'],['ALICE','Relax, Dario. His jacket gets the headlines. I know which purchase orders actually move.'],['DARIO','Great. Then let us negotiate with the person who can say yes without checking his reflection.']],
+  [['DARIO','I need Blackwell chips, Jensen. Not a keynote and not a waitlist.'],
+   ['JENSEN','Everybody wants Blackwell. You want priority? Convince the allocation desk.'],
+   ['ALICE','The allocation desk is a company, Jensen. I have my own clients, my own contracts, and my own reasons to be here.'],
+   ['DARIO','Alice Huang. The Megaspeed dealmaker. I expected a price sheet, not a complicated relationship chart.'],
+   ['JENSEN','We are discussing compute. Not my personal life.'],
+   ['ALICE','Then stop treating a personal promise like a purchase order. Dario needs documented terms, not a whispered favor.'],
+   ['DARIO','For once, the safety guy is asking for paperwork and the GPU guy wants discretion. Beautiful.'],
+   ['JENSEN','The chips are real. The invoices are real. Can we please keep this meeting about those two things?'],
+   ['ALICE','Then choose a route, Dario. Full-price priority or a slower, auditable safety discount. My business does not run on heart-shaped stamps.']],
   [['DARIO','The cargo survived the road. The compliance report may not.']],
   [['DARIO','Nice rooftop, Sam. Did the board approve the view, or just your latest attempt to lock up the future?'],['SAM','Dario. I thought you were busy selling safety as a competitive advantage.'],['DARIO','And I thought you were busy calling a closed vault open progress. Hand over the AGI file.'],['SAM','You want my research and my compute? Try earning access instead of giving another speech about principles.'],['DARIO','Fine. Show me the terminal. Let us see whether your security is as strong as your press releases.'],['SAM','One wrong answer and Legal gets a new yacht. Your move.']],
   [['SAM','The board is voting again. Unlike your safety committee, ours occasionally lets us ship something.']],
@@ -239,8 +247,8 @@
     return [line,["DARIO","One checkpoint down. What is next?"]];
    }
    if(stage===0){
-    if(choiceIndex===0)return [["JENSEN","Full price. Sensible. I knew there was a reason I liked your procurement team."],["ALICE","I will put the leather jacket surcharge under 'essential infrastructure'."]];
-    if(choiceIndex===1)return [["JENSEN","A safety discount? Fine. But the GPUs do not get to take a safety day."],["ALICE","One hundred dollars saved. Five points of hype lost. Finance calls that a balanced trade."]];
+    if(choiceIndex===0)return [["JENSEN","Full price. Priority allocation. Finally, a transaction I can explain in one sentence."],["ALICE","And I will put the actual terms in writing. No private promises disguised as supply contracts."]];
+    if(choiceIndex===1)return [["JENSEN","A safety discount? Fine. But the GPUs do not get to take a safety day."],["ALICE","One hundred dollars saved, fewer headlines, a cleaner paper trail. I negotiate deals, not alibis."]];
    }
    const stageLines={
     1:[["ALICE","Please deliver the crates intact. 'GPU confetti' is not an accepted inventory status."]],
