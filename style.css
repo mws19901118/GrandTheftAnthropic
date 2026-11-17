@@ -139,3 +139,15 @@
  #panel.cinematic-scene .scene-actor{flex:0 1 33%;width:33vw;height:min(48vh,410px)}
  #panel.cinematic-scene .scene-actor.speaking{transform:translateY(-3px) scale(1.04)}
 }
+
+/* Eye-line staging: mirrored portraits face conversation partners. */
+#panel.cinematic-scene .scene-actors .scene-character-art{
+ transition:transform .3s ease,filter .3s ease;
+ transform-origin:center bottom;
+}
+#panel.cinematic-scene .scene-actor.facing-left .scene-character-art{
+ transform:scaleX(-1);
+}
+#panel.cinematic-scene .scene-actor.facing-left .cin-bust{
+ transform:scaleX(-1);
+}
