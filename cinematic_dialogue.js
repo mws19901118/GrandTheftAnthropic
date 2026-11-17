@@ -73,7 +73,14 @@
   const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
   for(const who of participants){
    const actor=document.createElement('div');actor.className='scene-actor';actor.dataset.who=who;
-   actor.innerHTML=portrait(who);actors.append(actor);
+   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice'};
+   if(artFiles[who]){
+    const img=document.createElement('img');img.className='scene-character-art';
+    img.alt=who+' illustrated character';img.src='assets/cutscenes/characters/'+artFiles[who]+'.png';
+    img.onerror=()=>{actor.innerHTML=portrait(who)};
+    actor.append(img);
+   }else actor.innerHTML=portrait(who);
+   actors.append(actor);
   }
   let index=0,advance=null,buttonsShown=[],selected=0;
   function speak(who,msg){
