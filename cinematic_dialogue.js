@@ -120,21 +120,103 @@
     setPose(actor.dataset.who,restPose);
    }
   }
+
+  // Option-specific banter. This is presentation-only: mission callbacks still own all outcomes.
+  const choiceBanter={
+   poker:{
+    right:["LIANG","Correct. Turns out optimization is cheaper than buying another warehouse of GPUs."],
+    wrong:[
+     ["LIANG","That answer costs more than the training run. Impressive inefficiency."],
+     ["LIANG","Wall Street loves confidence. My spreadsheet prefers arithmetic."],
+     ["LIANG","You have successfully benchmarked the wrong answer at record speed."]
+    ]
+   },
+   approval:{
+    right:["SUNDAR","Approved. Please allow six to eight business quarters for the approval to become emotionally available."],
+    wrong:[
+     ["SUNDAR","Interesting. I will forward that to the committee that decides which committee should reject it."],
+     ["SUNDAR","Our process is very efficient. Every rejection is automatically copied to seventeen teams."],
+     ["SUNDAR","That answer has been placed on a waitlist for the waitlist."]
+    ]
+   },
+   zuck:{
+    right:["ZUCK","You found the real me. The other versions are still A/B testing eye contact."],
+    wrong:[
+     ["ZUCK","Wrong Zuck. That one is a fine-tuned model with better social skills."],
+     ["ZUCK","That is my digital twin. He has already accepted your friend request."],
+     ["ZUCK","Close. You have identified the version that actually reads the privacy policy."]
+    ]
+   },
+   market:{
+    right:["THE MARKET","CORRECT! THE ANALYSTS ARE CONFUSED, WHICH COUNTS AS A BEAT!"],
+    wrong:[
+     ["THE MARKET","WRONG! YOUR STOCK HAS BEEN DOWNGRADED TO 'INTERESTING THREAD'!"],
+     ["THE MARKET","THE STREET DISAGREES! PLEASE INSERT ANOTHER QUARTER!"],
+     ["THE MARKET","BAD ANSWER! THE VOLATILITY IS NOW SENTIENT!"]
+    ]
+   },
+   grok:{
+    right:["ELON","Correct. The launch window is still open. I checked between posts."],
+    wrong:[
+     ["ELON","Wrong. The rocket has been renamed and the launch date is now a meme."],
+     ["ELON","That answer has been fact-checked by a poll with twelve voters."],
+     ["ELON","Mission control says no. The group chat says absolutely yes."]
+    ]
+   }
+  };
+  const stageBanter={
+   0:["JENSEN","That is a bold negotiating position. Unfortunately, my GPU allocation spreadsheet has no sense of humor."],
+   1:["ALICE","Noted. The compliance team is already drafting a strongly worded emoji."],
+   2:["SAM","Cute answer, Dario. Did your safety committee approve the punchline?"],
+   3:["SAM","You can argue with the board after you escape the boardroom."],
+   4:["LIANG","Interesting theory. Let us see if it survives contact with the benchmark."],
+   5:["ELON","I would respond, but I just announced a different mission on my feed."],
+   6:["DARIO","Great. Another countdown with an optional existential crisis."],
+   7:["SUNDAR","I have opened a ticket to discuss your answer at our next ticket-opening meeting."],
+   8:["ZUCK","That response has been recorded by your glasses. And by mine."],
+   9:["THE MARKET","THE MARKET HAS HEARD YOU. THE MARKET REMAINS IRRATIONALLY EXCITED."]
+  };
+  function replyFor(option,choiceIndex,choiceCount){
+   const kind=missions[stage]&&missions[stage].kind;
+   const quizKind=stage===5?'grok':kind;
+   const pack=choiceBanter[quizKind];
+   if(pack&&typeof MISSION_ROUNDS!=='undefined'&&MISSION_ROUNDS[quizKind]){
+    const roundIndex=typeof missionQuiz!=='undefined'?missionQuiz.round:0;
+    const round=MISSION_ROUNDS[quizKind][roundIndex];
+    if(round&&round.options&&round.options[choiceIndex]===option.text){
+     if(choiceIndex===round.correct)return pack.right;
+     return pack.wrong[choiceIndex%pack.wrong.length];
+    }
+   }
+   const generic=stageBanter[stage]||["DARIO","I am sure this will look terrific in the incident report."];
+   if(choiceCount<=1)return generic;
+   const suffix=[
+    "Bold. Let us find out whether the game engine agrees.",
+    "I respect the confidence. The lawyers have requested a moment.",
+    "A classic move. The shareholders are updating their group chat."
+   ];
+   return [generic[0],choiceIndex===0?generic[1]:suffix[(choiceIndex-1)%suffix.length]];
+  }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
    if(token!==session)return;
    advance=null;choices.replaceChildren();buttonsShown=[];
    speak(speakerByStage[stage]||'DARIO',body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim());
    hint.textContent='CHOOSE RESPONSE · ↑ ↓ / ENTER';
-   for(const option of buttons){
+   for(const [choiceIndex,option] of buttons.entries()){
     const button=document.createElement('button');button.textContent=option.text;
     if(option.alt)button.className='alt';
     button.onclick=()=>{
      if(token!==session)return;
      if(option.alt){panel.classList.remove('cinematic-panel','cinematic-scene');option.fn();return}
-     speak('DARIO',option.text);choices.replaceChildren();buttonsShown=[];
+     const reply=replyFor(option,choiceIndex,buttons.length);
+     choices.replaceChildren();buttonsShown=[];
+     speak('DARIO',option.text);
      hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
-     advance=()=>{panel.classList.remove('cinematic-panel','cinematic-scene');advance=null;option.fn()};
+     advance=()=>{
+      speak(reply[0],reply[1]);
+      advance=()=>{panel.classList.remove('cinematic-panel','cinematic-scene');advance=null;option.fn()};
+     };
     };
     choices.append(button);buttonsShown.push(button);
    }
