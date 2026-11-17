@@ -1,7 +1,7 @@
 // Optional HQ defense; no campaign stage renumbering.
 (function(){
  const rounds=[
-  {who:'ALICE',q:'A bot swarm posing as investors is flooding HQ. Alice patches in from the NVIDIA loading dock.',yes:'ISOLATE THE DEMO NETWORK',no:'LIVESTREAM THE INCIDENT',good:'Nice isolation, Dario. The NVIDIA shipment tracker is clean too. One bot tried to sell us its own firewall.',bad:'You just gave the attackers a livestream audience. Jensen is charging for the bandwidth.'},
+  {who:'ALICE',q:'A bot swarm posing as investors is flooding HQ. Alice patches in from her own Megaspeed logistics desk.',yes:'ISOLATE THE DEMO NETWORK',no:'LIVESTREAM THE INCIDENT',good:'Nice isolation, Dario. The Megaspeed routing records are clean too. One bot tried to sell us its own firewall.',bad:'You just gave the attackers a livestream audience. The fake investors are now asking for a term sheet.'},
   {who:'JENSEN',q:'Rivals are diverting the Blackwell shipment.',yes:'VERIFY THE GPU ALLOCATION',no:'SEND A SLIDE DECK',good:'The GPUs are safe. My jacket still has a higher insurance premium.',bad:'The attackers sent a deck too. Theirs had better margins.'},
   {who:'SAM',q:'A forged AGI safety memo is circulating.',yes:'PUBLISH VERIFIED FACTS',no:'DELETE THE LOGS AND BLAME THE BOARD',good:'An evidence-based response? You make sarcasm difficult.',bad:'That is a board meeting with extra steps.'}
  ];
@@ -29,7 +29,7 @@
   if(running&&!locked&&stage>=4&&stage<missions.length&&!storyMissionState.hqDefenseDone){
    const pos=driving?car:player;
    if(closeEntry(pos,siteEntry(sites[0]))){
-    modal('ANTHROPIC HQ · UNDER SIEGE','DARIO: Someone is hitting HQ with investor bots, GPU diversion orders and forged safety memos. Alice is calling from the NVIDIA depot; Sam joined the channel to be unhelpful. Defend HQ?',
+    modal('ANTHROPIC HQ · UNDER SIEGE','DARIO: Someone is hitting HQ with investor bots, GPU diversion orders and forged safety memos. Alice is calling from her own logistics operation; Sam joined the channel to be unhelpful. Defend HQ?',
      [{text:'DEFEND HQ',fn:play},{text:'NOT NOW',alt:true,fn:closeModal}]);return;
    }
   }
