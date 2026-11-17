@@ -10,7 +10,7 @@
   'THE MARKET':['#ff89c4','#55304d','$']
  };
  const scenes=[
-  [['DARIO','The IPO clock is ticking. I need Blackwell chips, not another investor deck.'],['JENSEN','Welcome to the depot. Supply is limited. My leather jacket is not.'],['ALICE','Procurement has three options. Only two involve GPUs.']],
+  [['DARIO','I need Blackwell chips, Jensen. Not a keynote, not a waitlist, and definitely not another investor deck.'],['JENSEN','Everybody wants Blackwell. You want priority? Tell me why your next model deserves my next shipment.'],['DARIO','Because if we wait for your supply chain, the IPO will be a historical reenactment.'],['JENSEN','Then stop negotiating like you own the warehouse. You do not even own the forklift.'],['ALICE','I have three procurement routes. Two involve GPUs. The third involves a very creative interpretation of customs paperwork.'],['DARIO','Show me the options. And keep Jensen away from the pricing spreadsheet.']],
   [['DARIO','The cargo survived the road. The compliance report may not.']],
   [['DARIO','Nice rooftop, Sam. Did the board approve the view, or just your latest attempt to lock up the future?'],['SAM','Dario. I thought you were busy selling safety as a competitive advantage.'],['DARIO','And I thought you were busy calling a closed vault open progress. Hand over the AGI file.'],['SAM','You want my research and my compute? Try earning access instead of giving another speech about principles.'],['DARIO','Fine. Show me the terminal. Let us see whether your security is as strong as your press releases.'],['SAM','One wrong answer and Legal gets a new yacht. Your move.']],
   [['SAM','The board is voting again. Unlike your safety committee, ours occasionally lets us ship something.']],
