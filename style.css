@@ -72,3 +72,10 @@
 #panel.cinematic-scene .scene-backdrop:before{opacity:.25}
 #panel.cinematic-scene .scene-backdrop:after{opacity:.15}
 @media(max-width:600px){#panel.cinematic-scene .scene-actors{inset:13% 1% 29%;gap:0}#panel.cinematic-scene .scene-actor{width:45vw}#panel.cinematic-scene .scene-caption{left:2%;right:2%;bottom:2%;min-height:145px}}
+
+
+/* Separated high-resolution cutscene layers. Missing assets fall back to the existing art. */
+#panel.cinematic-scene .scene-0{background-image:linear-gradient(0deg,#07141b66,#07141b05),url('assets/cutscenes/scenes/nvidia_depot.webp'),url('assets/buildings/nvidia_depot.png')}
+#panel.cinematic-scene .scene-2{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/openai_rooftop.webp'),url('assets/buildings/openai_club.png')}
+#panel.cinematic-scene .scene-4{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/deepseek_casino.webp'),url('assets/buildings/deepseek_casino.png')}
+#panel.cinematic-scene .scene-actors .scene-character-art{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(6px 8px 2px #050a18bb)}
