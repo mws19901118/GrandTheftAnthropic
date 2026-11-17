@@ -43,6 +43,7 @@
   return /LEATHER JACKET TAX|EX-OPENAI FILES|THE R1 GAMBIT|FORM 17-B|FIND ZUCK|THE MARKET|THE GROKFATHER/.test(title);
  }
  let session=0;
+ let lastSceneStage=-1;
  function show(title,body,buttons){
   const token=++session;
   const panel=document.querySelector('#panel'),el=document.querySelector('#modal');
@@ -58,7 +59,8 @@
   const controls=document.createElement('div');controls.className='cin-controls';
   text.append(speaker,line,controls);layout.append(art,text);panel.append(header,layout);
   const base= scenes[stage]||[];
-  const step=base.length?base: [[speakerByStage[stage],missions[stage].line]];
+  const step=lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]);
+  lastSceneStage=stage;
   // First terminal / quiz uses its existing question as the last spoken line.
   let cursor=0;
   function say(name,msg){
