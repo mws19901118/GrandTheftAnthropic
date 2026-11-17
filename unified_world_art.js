@@ -45,6 +45,26 @@
     drawQuad(line.x,line.y,line.w,line.h,11,'#e8c775');
    }
   }
+  // Diagonal road polygons share the same low-cost rendering path.
+  for(const route of CURVED_ROADS){
+   for(let i=1;i<route.points.length;i++){
+    const a=route.points[i-1],b=route.points[i];
+    if(Math.min(Math.abs(a[0]-focus.x),Math.abs(b[0]-focus.x))>1300||Math.min(Math.abs(a[1]-focus.y),Math.abs(b[1]-focus.y))>1300)continue;
+    const dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
+    if(!length)continue;
+    const nx=-dy/length,ny=dx/length,w=route.width/2;
+    quad([[a[0]+nx*w,a[1]+ny*w,7],[b[0]+nx*w,b[1]+ny*w,7],[b[0]-nx*w,b[1]-ny*w,7],[a[0]-nx*w,a[1]-ny*w,7]],'#344353');
+    const inset=w-3;
+    for(const side of [-1,1]){
+     const u=side*inset;
+     quad([[a[0]+nx*u,a[1]+ny*u,9],[b[0]+nx*u,b[1]+ny*u,9],[b[0]+nx*(u+side*3),b[1]+ny*(u+side*3),9],[a[0]+nx*(u+side*3),a[1]+ny*(u+side*3),9]],'#718198');
+    }
+    for(let d=20;d<length-18;d+=105){
+     const e=Math.min(d+46,length-12),t=d/length,v=e/length;
+     quad([[a[0]+dx*t+nx*2,a[1]+dy*t+ny*2,11],[a[0]+dx*v+nx*2,a[1]+dy*v+ny*2,11],[a[0]+dx*v-nx*2,a[1]+dy*v-ny*2,11],[a[0]+dx*t-nx*2,a[1]+dy*t-ny*2,11]],'#e8c775');
+    }
+   }
+  }
   if(window.drawWorldCrosswalks)window.drawWorldCrosswalks();
  };
  spriteCar=function(px,py,a,color){
