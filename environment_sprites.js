@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  const sprites={};
- for(const [id,file] of Object.entries({shop:'neon_shop',office:'neon_office',palm:'neon_palm'})){
+ for(const [id,file] of Object.entries({shop:'neon_shop',office:'neon_office',palm:'neon_palm',lamp:'neon_lamp',billboard:'neon_billboard',kiosk:'neon_kiosk'})){
   const im=new Image();im.src='assets/environment/'+file+'.svg';sprites[id]=im;
  }
  const oldDetails=streetDetails;
@@ -11,8 +11,8 @@
   return x+halfX>r.x-pad&&x-halfX<r.x+r.w+pad&&y+halfY>r.y-pad&&y-halfY<r.y+r.h+pad;
  }
  function clearLot(x,y,type){
-  const half=type==='palm'?24:90;
-  const margin=type==='palm'?10:24;
+  const half=type==='palm'?24:type==='lamp'?18:type==='billboard'?48:type==='kiosk'?54:90;
+  const margin=type==='palm'||type==='lamp'?10:24;
   if(x-half<0||y-half<0||x+half>WORLD.w||y+half>WORLD.h)return false;
   if(ROADS.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
   if(WATER.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
@@ -43,11 +43,19 @@
   if(sites.some(s=>Math.hypot(s.x-x,s.y-y)<220))continue;
   props.push({x,y,type:'palm'});
  }
+ // Street furniture sits on clear lots beside the road, never in a traffic lane.
+ for(let i=0;i<56;i++){
+  const x=115+(i*307)%4490,y=120+(i*419)%3090;
+  const type=i%7===0?'billboard':i%3===0?'kiosk':'lamp';
+  if(!clearLot(x,y,type))continue;
+  if(props.some(p=>Math.abs(p.x-x)<95&&Math.abs(p.y-y)<95))continue;
+  props.push({x,y,type});
+ }
  props.sort((a,b)=>a.x+a.y-b.x-b.y);
  function visible(x,y){const p=driving?car:player;return Math.abs(p.x-x)+Math.abs(p.y-y)<2350}
  function renderProp(p){
   const im=sprites[p.type];if(!im.complete||!im.naturalWidth||!visible(p.x,p.y))return;
-  const anchor=iso(p.x,p.y,0),width=p.type==='palm'?72:p.type==='office'?145:132;
+  const anchor=iso(p.x,p.y,0),width=({palm:72,office:145,shop:132,lamp:54,billboard:124,kiosk:96})[p.type]||100;
   const height=width*im.naturalHeight/im.naturalWidth;
   ctx.save();
   ctx.drawImage(im,anchor.x-width/2,anchor.y-height+12,width,height);
