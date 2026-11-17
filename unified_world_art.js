@@ -46,6 +46,7 @@
     drawQuad(ax,ay,segment.w,segment.h,11,'#e8c775');
    }
   }
+  if(window.drawWorldCrosswalks)window.drawWorldCrosswalks();
  };
  spriteCar=function(px,py,a,color){
   const kind=color==='#5b9dff'?'police':color==='#ff794a'?'rival':'player';
