@@ -29,8 +29,15 @@ function objectivePoint(){if(gigRun)return gigTarget();if(assetRun){let step=ass
 // Entry pads are intentionally on the SOUTH side of buildings, facing the nearest street.
 // Story and property coordinates remain unchanged.
 const ENTRY_RADIUS=112;
-function siteEntry(s){return {x:s.x,y:s.y+150,site:s,kind:'site',label:s.n}}
-function propertyEntry(p){return {x:p.x,y:p.y+113,property:p,kind:'property',label:p.name}}
+function siteEntry(s){
+ const access={anthropic:707,nvidia:1847,openai:2927,deepseek:707,gemini:1847,meta:2927,ipo:4117,xai:4117};
+ return {x:access[s.id]??s.x,y:s.y+35,site:s,kind:'site',label:s.n};
+}
+function propertyEntry(p){
+ const positions={warehouse:{x:707,y:2740},lab:{x:1500,y:620},cloud:{x:3400,y:798}};
+ const e=positions[p.id]||{x:p.x,y:p.y+113};
+ return {...e,property:p,kind:'property',label:p.name};
+}
 function currentEntry(){if(gigRun){let s=gigTarget();return s&&siteEntry(s)}if(assetRun){const step=assetMissions[assetRun.id].steps[assetRun.step];if(!step)return null;const s=sites.find(s=>Math.hypot(s.x-step.x,s.y-step.y)<12);const p=propertyDefs.find(p=>Math.hypot(p.x-step.x,p.y-step.y)<12);return s?siteEntry(s):p?propertyEntry(p):{x:step.x,y:step.y,kind:'checkpoint',label:step.label}}if(stage<missions.length)return siteEntry(sites[missions[stage].site]);return null}
 function closeEntry(p,e,r=ENTRY_RADIUS){return !!e&&Math.hypot(p.x-e.x,p.y-e.y)<r}
 function nearestEntry(p){const all=[...sites.map(siteEntry),...propertyDefs.map(propertyEntry)];return all.filter(e=>closeEntry(p,e)).sort((a,b)=>Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(p.x-b.x,p.y-b.y))[0]||null}
@@ -262,6 +269,14 @@ function minimap(){
  ctx.fillStyle='#173d46';ctx.fillRect(xx,yy,mw,mh);
  for(const d of DISTRICTS){ctx.fillStyle={water:'#12617b',park:'#285b4a',industrial:'#474b55',plaza:'#4d435b'}[d.type];ctx.fillRect(xx+d.x/WORLD.w*mw,yy+d.y/WORLD.h*mh,d.w/WORLD.w*mw,d.h/WORLD.h*mh)}
  for(const r of ROADS){ctx.fillStyle=r.kind==='highway'?'#a1b4ca':'#65758b';ctx.fillRect(xx+r.x/WORLD.w*mw,yy+r.y/WORLD.h*mh,Math.max(1,r.w/WORLD.w*mw),Math.max(1,r.h/WORLD.h*mh))}
+ // Draw the same non-grid roads used by the world renderer.
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ for(const r of CURVED_ROADS){
+  ctx.beginPath();
+  r.points.forEach((p,i)=>{const x=xx+p[0]/WORLD.w*mw,y=yy+p[1]/WORLD.h*mh;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+  ctx.strokeStyle='#8395aa';ctx.lineWidth=Math.max(2,r.width/WORLD.w*mw);ctx.stroke();
+ }
+ ctx.restore();
  sites.forEach((s,i)=>{ctx.fillStyle=s.color;ctx.fillRect(xx+s.x/WORLD.w*mw-2,yy+s.y/WORLD.h*mh-2,4,4)});propertyDefs.forEach(d=>{ctx.fillStyle=ownedProperties[d.id]?d.color:'#f3dfab';ctx.fillRect(xx+d.x/WORLD.w*mw-3,yy+d.y/WORLD.h*mh-3,6,6)});
  if(gigRun){let st=gigTarget();ctx.strokeStyle='#8aff9c';ctx.lineWidth=3;ctx.beginPath();ctx.arc(xx+st.x/WORLD.w*mw,yy+st.y/WORLD.h*mh,8,0,7);ctx.stroke()}if(assetRun){let st=assetMissions[assetRun.id].steps[assetRun.step];ctx.strokeStyle='#62f3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx+st.x/WORLD.w*mw,yy+st.y/WORLD.h*mh,7,0,7);ctx.stroke()}else if(stage<missions.length){let s=sites[missions[stage].site];ctx.strokeStyle='#ffe16f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx+s.x/WORLD.w*mw,yy+s.y/WORLD.h*mh,6,0,7);ctx.stroke()}
  const p=driving?car:player;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xx+p.x/WORLD.w*mw,yy+p.y/WORLD.h*mh,4,0,7);ctx.fill();ctx.restore();
