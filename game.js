@@ -171,15 +171,22 @@ function busted(){
 }
 function retryMission(){
  resetMissionQuiz();resetStoryMission(stage);
- if(checkpoint){({cash,gpu,hype,safety,wanted,carrying}=checkpoint)}
- else {wanted=0;carrying=false;}
- driving=false;resetVehicle();arrestStart=0;deadline=0;missionStart=null;missionBannerUntil=performance.now()+2200;
- const m=missions[stage];
- // Start near the previous mission's destination, or at Anthropic HQ.
+ if(checkpoint){({cash,gpu,hype,safety,carrying}=checkpoint)}
+ // A retry starts a fresh attempt, never with the previous arrest meter or pursuers.
+ wanted=stage===3?2:0;
+ if(stage===1)carrying=true;
+ driving=false;resetVehicle();velocity={x:0,y:0};arrestStart=0;deadline=0;
+ missionStart=null;checkpoint=null;lastImpact=0;cargoIntegrity=100;rivalVans=[];
+ missionBannerUntil=performance.now()+2200;
+ // Continuation stages restart at the previous destination; new chapters at HQ.
+ const chapters=[0,2,4,5,7,8,9];
  const prev=stage>0?sites[missions[stage-1].site]:sites[0];
- player={x:prev.x+15,y:prev.y+80};car={x:player.x+80,y:player.y+20,a:0};
+ const home=sites[0];
+ const origin=chapters.includes(stage)?home:prev;
+ player={x:origin.x+15,y:origin.y+90};
+ car={x:player.x+80,y:player.y+20,a:0};
  cops=[{x:3900,y:2450},{x:3450,y:420}];
- closeModal();toast('MISSION RESTARTED');
+ closeModal();toast('MISSION RESTARTED · PURSUIT RESET');
 }
 // Mission minigames share one neutral-choice UI: never reveal the answer via styling.
 const MISSION_ROUNDS={
