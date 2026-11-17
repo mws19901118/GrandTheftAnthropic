@@ -219,22 +219,8 @@ function ground(){
   prism(x,y,28+(i%4)*12,25+(i%3)*14,18+(i%7)*10,i%2?'#2e5960':'#345367');
  }
 }
-function streetDetails(t){
- // palm trees, pools of light, and futuristic billboards are purely visual
- for(let i=0;i<42;i++){
-  let wx=100+(i*397)%4520,wy=120+(i*293)%3190;
-  if(sites.some(s=>Math.hypot(wx-s.x,wy-s.y)<145))continue;
-  let p=iso(wx,wy,0),top=iso(wx,wy,75);
-  ctx.strokeStyle='#bd9276';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(top.x,top.y);ctx.stroke();
-  for(let k=0;k<6;k++){let a=k*Math.PI/3+Math.sin(t/1800)*.06;ctx.strokeStyle=k%2?'#38a48d':'#65bd92';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(top.x,top.y);ctx.quadraticCurveTo(top.x+Math.cos(a)*21,top.y+Math.sin(a)*12,top.x+Math.cos(a)*36,top.y+Math.sin(a)*20);ctx.stroke()}
- }
- for(let i=0;i<30;i++){
-  let wx=160+(i*271)%4450,wy=90+(i*431)%3180;
-  if(sites.some(s=>Math.hypot(wx-s.x,wy-s.y)<145))continue;
-  let p=iso(wx,wy,4);ctx.fillStyle=i%2?'#ff65b42b':'#54cfe62b';ctx.beginPath();ctx.ellipse(p.x,p.y,35,15,0,0,7);ctx.fill();
-  ctx.fillStyle=i%2?'#ff65b4':'#54cfe6';ctx.fillRect(p.x-2,p.y-50,4,50);ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=12;ctx.fillRect(p.x-8,p.y-53,16,6);ctx.shadowBlur=0;
- }
-}
+// Original procedural palms and lamps replaced by reusable environment sprites.
+function streetDetails(t){}
 function minimap(){
  const mw=174,mh=128,xx=W-mw-18,yy=H-mh-52;
  ctx.save();ctx.fillStyle='#071222e8';ctx.fillRect(xx-6,yy-6,mw+12,mh+12);ctx.strokeStyle='#f779b880';ctx.strokeRect(xx-6,yy-6,mw+12,mh+12);
