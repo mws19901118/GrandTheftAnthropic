@@ -43,6 +43,17 @@
   if(sites.some(s=>Math.hypot(s.x-x,s.y-y)<220))continue;
   props.push({x,y,type:'palm'});
  }
+ // Fill empty blocks with small storefronts/offices, without increasing NPC simulation.
+ // All lots are checked against full road footprints and existing landmarks.
+ for(let y=320;y<WORLD.h-180;y+=210){
+  for(let x=210;x<WORLD.w-180;x+=230){
+   const px=x+((Math.floor(y/210)%2)*35),py=y;
+   const type=(Math.floor(x/230)+Math.floor(y/210))%3===0?'office':'shop';
+   if(!clearLot(px,py,type))continue;
+   if(props.some(p=>Math.abs(p.x-px)<175&&Math.abs(p.y-py)<145))continue;
+   props.push({x:px,y:py,type});
+  }
+ }
  // Street furniture sits on clear lots beside the road, never in a traffic lane.
  for(let i=0;i<56;i++){
   const x=115+(i*307)%4490,y=120+(i*419)%3090;
@@ -52,7 +63,7 @@
   props.push({x,y,type});
  }
  props.sort((a,b)=>a.x+a.y-b.x-b.y);
- function visible(x,y){const p=driving?car:player;return Math.abs(p.x-x)+Math.abs(p.y-y)<2350}
+ function visible(x,y){const p=driving?car:player;return Math.abs(p.x-x)<1050&&Math.abs(p.y-y)<1050}
  function renderProp(p){
   const im=sprites[p.type];if(!im.complete||!im.naturalWidth||!visible(p.x,p.y))return;
   const anchor=iso(p.x,p.y,0),width=({palm:72,office:145,shop:132,lamp:54,billboard:124,kiosk:96})[p.type]||100;
