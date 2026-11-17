@@ -25,3 +25,30 @@
 .cin-controls button:hover,.cin-controls button:focus-visible{background:#a93677;color:#fff;border-color:#ff9bd1}
 .cin-controls button.alt{opacity:.78}
 @media(max-width:600px){#panel.cinematic-panel{padding:14px;max-height:90vh;overflow:auto}.cin-layout{grid-template-columns:105px 1fr;gap:10px;min-height:210px}.cin-bust{height:190px}.cin-controls button{font-size:11px;padding:9px}.cin-speaker{font-size:14px}#panel .cin-line{font-size:13px}}
+
+
+/* In-mission 2D cutscene: full illustrated set, characters, subtitle dialogue. */
+#panel.cinematic-scene{position:relative;width:min(1060px,96vw);height:min(670px,91vh);min-height:480px;overflow:hidden;padding:0;background:#101525;text-align:left;border:3px solid #17192c;box-shadow:0 25px 100px #000e}
+.scene-backdrop{position:absolute;inset:0;background:linear-gradient(0deg,#11142a 3%,transparent 50%),linear-gradient(125deg,#e8777e 0%,#bf5a9c 35%,#41387b 75%,#171d3d);pointer-events:none}
+.scene-backdrop:before{content:"";position:absolute;inset:20% 0 20%;background:repeating-linear-gradient(90deg,transparent 0 12%,#18233eaa 12% 18%,transparent 18% 23%),linear-gradient(0deg,#18223d 0 25%,transparent 25%);clip-path:polygon(0 28%,14% 28%,14% 5%,31% 5%,31% 32%,48% 32%,48% 0,62% 0,62% 22%,79% 22%,79% 9%,100% 9%,100% 100%,0 100%);opacity:.75}
+.scene-backdrop:after{content:"";position:absolute;left:-15%;right:-15%;bottom:21%;height:12%;background:repeating-linear-gradient(0deg,#24334b 0 5px,#161d35 5px 12px);transform:skewY(-3deg)}
+.scene-0{background:linear-gradient(0deg,#14222a,transparent 65%),linear-gradient(120deg,#4b824d,#9dc46c 35%,#263f52 85%)}
+.scene-2{background:linear-gradient(0deg,#111a35,transparent 65%),linear-gradient(110deg,#5a3b88,#f080b1 40%,#273c69)}
+.scene-4{background:linear-gradient(0deg,#2b173a,transparent 65%),linear-gradient(110deg,#342d78,#e267af 50%,#152d57)}
+.scene-5{background:linear-gradient(0deg,#1a1b35,transparent 65%),linear-gradient(110deg,#5c4f96,#b0a7f3 45%,#263e6c)}
+.scene-7{background:linear-gradient(0deg,#1c2e43,transparent 65%),linear-gradient(110deg,#386d99,#e9c378 45%,#31546f)}
+.scene-8{background:linear-gradient(0deg,#16233c,transparent 65%),linear-gradient(110deg,#336b9a,#8dbaff 45%,#223e6c)}
+.scene-9{background:linear-gradient(0deg,#2c1832,transparent 65%),linear-gradient(110deg,#b14c81,#f8b475 45%,#3c3e73)}
+.scene-title{position:absolute;z-index:3;top:17px;left:24px;color:#fff;font:900 clamp(16px,2.5vw,25px) system-ui;text-shadow:2px 3px #1118;letter-spacing:.07em}
+.scene-actors{position:absolute;inset:12% 4% 24%;display:flex;align-items:flex-end;justify-content:space-evenly;pointer-events:none}
+.scene-actor{width:min(34%,290px);height:100%;display:flex;align-items:flex-end;justify-content:center;filter:brightness(.53) saturate(.65);transform:translateY(18px) scale(.92);transition:filter .2s,transform .2s}
+.scene-actor.speaking{filter:brightness(1.13) saturate(1.15) drop-shadow(0 0 14px #fff5);transform:translateY(0) scale(1.08)}
+.scene-actor .cin-bust{height:100%;width:100%;max-width:none;filter:drop-shadow(6px 8px 0 #111a2f)}
+.scene-caption{position:absolute;z-index:4;left:2%;right:2%;bottom:2%;min-height:155px;padding:17px 22px;background:#0b1028f4;border:2px solid #f2c3d0;box-shadow:0 10px 35px #000a}
+.scene-speaker{font:900 18px system-ui;color:#ffc383;letter-spacing:.07em}
+#panel .scene-line{font:500 clamp(15px,1.9vw,21px)/1.45 system-ui;margin:7px 0;color:#fff}
+.scene-hint{font:800 11px system-ui;letter-spacing:.12em;color:#a5e8f2;margin-top:9px}
+.scene-choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.scene-choices button{font-size:12px;padding:9px 12px;margin:0;background:#273653;border:1px solid #607392;color:white;text-align:left}
+.scene-choices button.selected,.scene-choices button:hover{background:#a73776;border-color:#ffd4e8}
+@media(max-width:600px){#panel.cinematic-scene{min-height:440px;height:85vh}.scene-actors{inset:10% 0 28%}.scene-actor{width:40%}.scene-caption{padding:12px;max-height:55%;overflow:auto}.scene-title{font-size:14px}.scene-choices button{font-size:11px;padding:7px 9px}}
