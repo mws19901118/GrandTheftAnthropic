@@ -9,41 +9,40 @@
  const ready=im=>im&&im.complete&&im.naturalWidth>0;
  const oldGround=ground,oldCar=spriteCar,oldPerson=spritePerson;
  const drawQuad=(x,y,w,h,z,color)=>quad([[x,y,z],[x+w,y,z],[x+w,y+h,z],[x,y+h,z]],color);
+ // Precompute static lane segments once, not every animation frame.
+ const roads=ROADS.map(r=>{
+  const horizontal=r.w>r.h,total=horizontal?r.w:r.h;
+  const stripes=[];
+  for(let u=30;u<total-25;u+=116){
+   const length=Math.min(52,total-u-10);
+   if(length<=0)continue;
+   const x=horizontal?r.x+u:r.x+r.w/2,y=horizontal?r.y+r.h/2:r.y+u;
+   const segment={x:horizontal?x-length/2:x-2,y:horizontal?y-2:y-length/2,w:horizontal?length:4,h:horizontal?4:length};
+   if(ROADS.some(other=>other!==r&&segment.x<other.x+other.w&&segment.x+segment.w>other.x&&segment.y<other.y+other.h&&segment.y+segment.h>other.y))continue;
+   stripes.push(segment);
+  }
+  return {r,stripes};
+ });
+ // Canvas SVG patterns are expensive to rasterize repeatedly; use a cached,
+ // flat asphalt base with sparse texture flecks instead.
  ground=function(){
   oldGround();
   const focus=driving?car:player;
-  const roadImage=images.road;
-  // World-space texture transform preserves the exact existing road geometry.
-  for(const r of ROADS){
+  for(const {r,stripes} of roads){
    const cx=r.x+r.w/2,cy=r.y+r.h/2;
-   if(Math.abs(cx-focus.x)>r.w/2+1400||Math.abs(cy-focus.y)>r.h/2+1400)continue;
-   if(ready(roadImage)){
-    ctx.save();
-    ctx.transform(ISOX,ISOY,-ISOX,ISOY,0,0);
-    const pattern=ctx.createPattern(roadImage,'repeat');
-    if(pattern){ctx.fillStyle=pattern;ctx.fillRect(r.x,r.y,r.w,r.h)}
-    ctx.restore();
-   }
-   // Kerbs are inset so they cannot protrude into the surrounding blocks.
-   if(r.w>r.h){
-    drawQuad(r.x,r.y,r.w,4,8,'#7c879d');
-    drawQuad(r.x,r.y+r.h-4,r.w,4,8,'#7c879d');
-   }else{
-    drawQuad(r.x,r.y,4,r.h,8,'#7c879d');
-    drawQuad(r.x+r.w-4,r.y,4,r.h,8,'#7c879d');
-   }
-   // One set of centerlines, clipped to each road segment and omitted at intersections.
+   if(Math.abs(cx-focus.x)>r.w/2+1000||Math.abs(cy-focus.y)>r.h/2+1000)continue;
    const horizontal=r.w>r.h;
-   const total=horizontal?r.w:r.h;
-   for(let u=30;u<total-25;u+=116){
-    const x=horizontal?r.x+u:r.x+r.w/2;
-    const y=horizontal?r.y+r.h/2:r.y+u;
-    const length=Math.min(52,total-u-10);
-    if(length<=0)continue;
-    const ax=horizontal?x-length/2:x-2,ay=horizontal?y-2:y-length/2;
-    const segment={x:ax,y:ay,w:horizontal?length:4,h:horizontal?4:length};
-    if(ROADS.some(other=>other!==r&&segment.x<other.x+other.w&&segment.x+segment.w>other.x&&segment.y<other.y+other.h&&segment.y+segment.h>other.y))continue;
-    drawQuad(ax,ay,segment.w,segment.h,11,'#e8c775');
+   drawQuad(r.x,r.y,r.w,r.h,6,r.kind==='bridge'?'#536174':r.kind==='highway'?'#364454':'#344353');
+   if(horizontal){
+    drawQuad(r.x,r.y,r.w,3,8,'#718198');
+    drawQuad(r.x,r.y+r.h-3,r.w,3,8,'#718198');
+   }else{
+    drawQuad(r.x,r.y,3,r.h,8,'#718198');
+    drawQuad(r.x+r.w-3,r.y,3,r.h,8,'#718198');
+   }
+   for(const line of stripes){
+    if(Math.abs(line.x-focus.x)>1050||Math.abs(line.y-focus.y)>1050)continue;
+    drawQuad(line.x,line.y,line.w,line.h,11,'#e8c775');
    }
   }
   if(window.drawWorldCrosswalks)window.drawWorldCrosswalks();
