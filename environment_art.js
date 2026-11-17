@@ -72,7 +72,7 @@
    for(let i=0;i<3;i++){const x=z.x+i*42;prism(x,z.y,35,29,20,i%2?'#5b7880':'#906e61');const p=iso(x,z.y,25);ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillStyle='#d5e9d6';ctx.fillText('GPU',p.x,p.y)}
   }
   for(let i=0;i<12;i++){const x=190+i*67,y=1500+(i%2)*85;if(visible(x,y)&&!roadSurface(x,y)&&!restrictedSite(x,y))i%3?planter(x,y,i):benches(x,y)}
-  if(visible(1870,650,1400)){billboard(1670,635,'COMPUTE DOCKS','#a2f575');billboard(2060,620,'CUDA LICENSED','#a2f575')}
+  // Removed floating Compute Docks / CUDA billboards near NVIDIA depot.
   if(visible(4140,2170,1300))billboard(4270,1940,'THE MARKET NEVER SLEEPS','#ff78b7');
  }
  function rooftop(s,i){
