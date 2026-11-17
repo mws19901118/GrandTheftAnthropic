@@ -16,8 +16,9 @@
   if(x-half<0||y-half<0||x+half>WORLD.w||y+half>WORLD.h)return false;
   if(ROADS.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
   if(WATER.some(r=>intersectsRect(x,y,half,half,r,margin)))return false;
-  if(sites.some(q=>Math.abs(q.x-x)<half+160&&Math.abs(q.y-y)<half+135))return false;
-  if(propertyDefs.some(q=>Math.abs(q.x-x)<half+125&&Math.abs(q.y-y)<half+110))return false;
+ if(onCurvedRoad(x,y,half*1.45+margin))return false;
+  if(sites.some(q=>Math.abs(q.x-x)<half+195&&Math.abs(q.y-y)<half+195))return false;
+  if(propertyDefs.some(q=>Math.abs(q.x-x)<half+160&&Math.abs(q.y-y)<half+155))return false;
   return true;
  }
 
