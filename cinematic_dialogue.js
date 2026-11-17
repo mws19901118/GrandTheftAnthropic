@@ -61,7 +61,7 @@
  }
  let session=0;
  let lastSceneStage=-1;
- function show(title,body,buttons){
+ function show(title,body,buttons,customScript){
   const token=++session, panel=document.querySelector('#panel'),overlay=document.querySelector('#modal');
   locked=true;overlay.style.display='grid';
   panel.classList.add('cinematic-panel','cinematic-scene');
@@ -76,8 +76,8 @@
   const choices=document.createElement('div');choices.className='scene-choices';
   box.append(nameTag,dialogue,hint,choices);panel.append(background,heading,actors,box);
   const base=scenes[stage]||[];
-  const script=lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]);
-  lastSceneStage=stage;
+  const script=customScript||(lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]));
+  if(!customScript)lastSceneStage=stage;
   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice',SAM:'sam',LIANG:'liang',ELON:'elon',SUNDAR:'sundar',ZUCK:'zuck','THE MARKET':'the_market'};
   // Scene-appropriate resting pose. The active speaker may use a gesture pose.
   // Only clean, production-ready files are eligible; *_reference.webp is never loaded.
@@ -313,6 +313,7 @@
   window.__sceneCleanup=()=>window.removeEventListener('keydown',onKey,true);
   next();
  }
+ window.playMissionCutscene=function(title,script,onContinue){show(title,'', [{text:'CONTINUE',fn:onContinue}],script)};
  modal=function(title,body,buttons){
   const panel=document.querySelector('#panel');panel.classList.remove('cinematic-panel');
   if(isStory(title)){show(title,body,buttons);return}
