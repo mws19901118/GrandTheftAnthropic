@@ -73,8 +73,8 @@
   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice',SAM:'sam',LIANG:'liang',ELON:'elon',SUNDAR:'sundar',ZUCK:'zuck','THE MARKET':'the_market'};
   // Scene-appropriate resting pose. The active speaker may use a gesture pose.
   // Only clean, production-ready files are eligible; *_reference.webp is never loaded.
-  const seatedStages=new Set([2,3,4,7,8,9]);
-  const restPose=seatedStages.has(stage)?'sit':'stand';
+  // Until each background has authored seating positions, never spawn a chair as part of a character sprite.
+  const restPose='stand';
   const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
   const actorImages=new Map();
   for(const who of participants){
@@ -108,7 +108,7 @@
   let index=0,advance=null,buttonsShown=[],selected=0;
   function speak(who,msg){
    nameTag.textContent=who;dialogue.textContent=msg;
-   for(const actor of actors.children){const active=actor.dataset.who===who;actor.classList.toggle('speaking',active);setPose(actor.dataset.who,active?'gesture':restPose)}
+   for(const actor of actors.children){const active=actor.dataset.who===who;actor.classList.toggle('speaking',active);setPose(actor.dataset.who,restPose)}
   }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
