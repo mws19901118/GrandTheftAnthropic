@@ -108,7 +108,18 @@
   let index=0,advance=null,buttonsShown=[],selected=0;
   function speak(who,msg){
    nameTag.textContent=who;dialogue.textContent=msg;
-   for(const actor of actors.children){const active=actor.dataset.who===who;actor.classList.toggle('speaking',active);setPose(actor.dataset.who,restPose)}
+   const castOnStage=[...actors.children];
+   const speakerIndex=castOnStage.findIndex(actor=>actor.dataset.who===who);
+   for(let i=0;i<castOnStage.length;i++){
+    const actor=castOnStage[i],active=actor.dataset.who===who;
+    actor.classList.toggle('speaking',active);
+    // Outer characters face inward; a middle character looks toward the speaker.
+    // Flip the portrait only, never the dialogue or the entire scene.
+    const faceLeft=castOnStage.length>1&&(i===castOnStage.length-1||
+      (i>0&&i<castOnStage.length-1&&speakerIndex>=0&&speakerIndex<i));
+    actor.classList.toggle('facing-left',faceLeft);
+    setPose(actor.dataset.who,restPose);
+   }
   }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
