@@ -4,11 +4,11 @@ const sites=[
  {id:'anthropic',x:780,y:950,n:'ANTHROPIC HQ',color:'#e6a77e'},
  {id:'nvidia',x:1880,y:950,n:'NVIDIA DEPOT',color:'#8bd34b'},
  {id:'openai',x:2960,y:950,n:'OPENAI CLUB',color:'#57d2b5'},
- {id:'xai',x:4150,y:2740,n:'xAI COLOSSUS',color:'#8f93ff'},
- {id:'deepseek',x:780,y:2100,n:'DEEPSEEK CASINO',color:'#4dbde9'},
- {id:'gemini',x:1880,y:2100,n:'GEMINI TOWER',color:'#f5c960'},
- {id:'meta',x:2960,y:2100,n:'META MALL',color:'#559dff'},
- {id:'ipo',x:4150,y:2100,n:'IPO EXCHANGE',color:'#ff65b0'}
+ {id:'xai',x:4260,y:2740,n:'xAI COLOSSUS',color:'#8f93ff'},
+ {id:'deepseek',x:920,y:2100,n:'DEEPSEEK CASINO',color:'#4dbde9'},
+ {id:'gemini',x:2050,y:2100,n:'GEMINI TOWER',color:'#f5c960'},
+ {id:'meta',x:3180,y:2100,n:'META MALL',color:'#559dff'},
+ {id:'ipo',x:4260,y:2100,n:'IPO EXCHANGE',color:'#ff65b0'}
 ];
 const DISTRICTS=[
  {x:0,y:0,w:1160,h:690,type:'water',name:'NEON BAY'},
@@ -25,7 +25,8 @@ const DISTRICTS=[
 const ROADS=[
  {x:0,y:1050,w:4800,h:125,kind:'arterial'},
  {x:0,y:2230,w:4800,h:125,kind:'arterial'},
- {x:0,y:2840,w:4800,h:110,kind:'arterial'},
+ {x:0,y:2840,w:3400,h:110,kind:'arterial'},
+ {x:3640,y:2840,w:1160,h:110,kind:'arterial'},
  {x:1390,y:420,w:2350,h:110,kind:'bridge'},
  {x:420,y:780,w:110,h:2580,kind:'local'},
  {x:1440,y:0,w:120,h:3400,kind:'highway'},
@@ -35,6 +36,8 @@ const ROADS=[
  {x:900,y:1660,w:1100,h:85,kind:'local'},
  {x:2000,y:1660,w:1020,h:85,kind:'local'},
  {x:3020,y:1660,w:820,h:85,kind:'local'},
+ {x:1490,y:560,w:370,h:86,kind:'local'},
+ {x:3330,y:755,w:425,h:86,kind:'local'},
  {x:660,y:1050,w:95,h:1250,kind:'access'},
  {x:1800,y:1050,w:95,h:1250,kind:'access'},
  {x:2880,y:1050,w:95,h:1250,kind:'access'},
@@ -47,7 +50,9 @@ const ROADS=[
 // Non-grid diagonal connectors, represented as short world-space polylines.
 const CURVED_ROADS=[
  {points:[[1080,1700],[1160,1800],[1250,1950],[1380,2230]],width:82,kind:'local'},
- {points:[[3100,1700],[3240,1830],[3450,2020],[3650,2290]],width:84,kind:'local'}
+ {points:[[3100,1700],[3240,1830],[3450,2020],[3650,2290]],width:84,kind:'local'},
+ {points:[[3360,2885],[3460,2760],[3560,2620],[3700,2460]],width:90,kind:'local'},
+ {points:[[2050,1700],[2200,1550],[2370,1430],[2580,1160]],width:80,kind:'local'}
 ];
 function distanceToSegment(x,y,a,b){
  const dx=b[0]-a[0],dy=b[1]-a[1],len=dx*dx+dy*dy;
