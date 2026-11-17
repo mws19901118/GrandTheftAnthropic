@@ -24,19 +24,28 @@
  const speakerByStage=['JENSEN','DARIO','SAM','SAM','LIANG','ELON','DARIO','SUNDAR','ZUCK','THE MARKET'];
  const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function portrait(name){
-  const [accent,coat,letter]=cast[name]||cast.DARIO;
-  // Vector bust placeholder; can be replaced with cropped cover character artwork later.
+  const [accent,coat]=cast[name]||cast.DARIO;
+  const glasses=['DARIO','JENSEN','LIANG','SUNDAR'].includes(name);
+  const skin=name==='SUNDAR'?'#ae765c':['JENSEN','LIANG','ALICE'].includes(name)?'#d3a07c':'#e0a98a';
+  const hair=name==='ALICE'?'M55 116 Q31 8 103 12 Q173 8 151 125 L168 192 L143 188 L137 93 Q102 49 66 94 L58 190 L36 191Z':
+   name==='ZUCK'?'M58 92 Q35 32 71 27 Q89 6 105 29 Q130 8 146 50 Q158 82 137 96 L131 57 Q97 76 67 62Z':
+   name==='JENSEN'?'M57 96 Q42 40 86 33 Q128 19 145 64 L135 92 L130 55 Q100 67 67 58Z':
+   'M59 94 Q38 30 81 23 Q119 12 145 55 L135 95 L128 54 Q95 67 66 58Z';
+  const jacket=['JENSEN','ELON','ALICE'].includes(name)?'#151b27':coat;
+  const eyewear=glasses?'<path d="M71 99 h27 v18 h-27z M107 99 h27 v18 h-27z M98 106 h9" stroke="#151b27" stroke-width="3" fill="#8ed6ff22"/>':'';
+  const accessory=name==='ALICE'?'<circle cx="63" cy="120" r="6" fill="none" stroke="#ffd17c" stroke-width="3"/><circle cx="140" cy="120" r="6" fill="none" stroke="#ffd17c" stroke-width="3"/>':
+   name==='ZUCK'?'<path d="M73 102 h27 M108 102 h27" stroke="#111" stroke-width="8"/>':
+   name==='SUNDAR'||name==='ELON'?'<path d="M81 139 Q102 156 122 139" stroke="#68463e" stroke-width="5" fill="none"/>':'';
   return '<svg class="cin-bust" viewBox="0 0 200 245" role="img" aria-label="'+safe(name)+' portrait">'+
-   '<defs><linearGradient id="coat-'+letter+'" x2="1" y2="1"><stop stop-color="'+coat+'"/><stop offset="1" stop-color="#101a2d"/></linearGradient></defs>'+
-   '<ellipse cx="100" cy="235" rx="85" ry="15" fill="#030817" opacity=".55"/>'+
-   '<path d="M14 245 Q22 164 76 157 L125 157 Q178 168 186 245Z" fill="'+coat+'" stroke="'+accent+'" stroke-width="3"/>'+
-   '<path d="M82 156 L100 194 L119 156 L111 143 L89 143Z" fill="#d69b7e"/>'+
-   '<path d="M64 77 Q65 31 100 31 Q137 31 139 80 L134 135 Q120 159 100 159 Q79 156 67 132Z" fill="#d8a082"/>'+
-   '<path d="M64 91 Q53 31 94 22 Q133 17 142 59 L137 89 L126 52 Q95 64 69 57Z" fill="#1b2636"/>'+
-   '<path d="M80 103 h13 M110 103 h13" stroke="#28303b" stroke-width="3" stroke-linecap="round"/>'+
-   '<path d="M91 133 Q100 139 110 133" stroke="#8b594d" stroke-width="2" fill="none"/>'+
-   '<path d="M72 165 L100 194 L85 213 L62 167 M127 165 L100 194 L116 213 L142 169" fill="none" stroke="'+accent+'" stroke-width="3"/>'+
-   '<text x="100" y="230" text-anchor="middle" font-family="system-ui" font-size="15" font-weight="900" fill="'+accent+'">'+letter+'</text></svg>';
+   '<path d="M6 245 Q15 163 74 153 L128 153 Q183 168 194 245Z" fill="'+jacket+'" stroke="'+accent+'" stroke-width="3"/>'+
+   '<path d="M86 145 L82 165 L102 195 L120 163 L114 144Z" fill="'+skin+'"/>'+
+   '<path d="M64 77 Q67 35 102 36 Q139 35 141 82 L135 131 Q120 159 101 160 Q80 155 66 131Z" fill="'+skin+'" stroke="#5d3c35" stroke-width="2"/>'+
+   '<path d="'+hair+'" fill="'+(name==='JENSEN'?'#44474c':name==='ZUCK'?'#65453a':'#242632')+'"/>'+
+   '<path d="M78 97 L94 98 M109 98 L125 97" stroke="#352a2a" stroke-width="3"/>'+
+   '<path d="M87 132 Q103 139 116 132" stroke="#8d574b" stroke-width="2" fill="none"/>'+
+   eyewear+accessory+
+   '<path d="M72 159 L102 197 L86 213 L58 169 M129 159 L102 197 L118 213 L149 171" fill="none" stroke="'+accent+'" stroke-width="3"/>'+
+   '</svg>';
  }
  function isStory(title){
   if(!running||stage>=missions.length)return false;
