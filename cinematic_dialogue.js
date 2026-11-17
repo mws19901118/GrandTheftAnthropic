@@ -45,64 +45,82 @@
  let session=0;
  let lastSceneStage=-1;
  function show(title,body,buttons){
-  const token=++session;
-  const panel=document.querySelector('#panel'),el=document.querySelector('#modal');
-  locked=true;el.style.display='grid';
-  panel.classList.add('cinematic-panel');
+  const token=++session, panel=document.querySelector('#panel'),overlay=document.querySelector('#modal');
+  locked=true;overlay.style.display='grid';
+  panel.classList.add('cinematic-panel','cinematic-scene');
   panel.replaceChildren();
-  const header=document.createElement('div');header.className='cin-heading';header.textContent=title.replace(/<[^>]+>/g,'');
-  const layout=document.createElement('div');layout.className='cin-layout';
-  const art=document.createElement('div');art.className='cin-portrait';
-  const text=document.createElement('div');text.className='cin-copy';
-  const speaker=document.createElement('div');speaker.className='cin-speaker';
-  const line=document.createElement('p');line.className='cin-line';
-  const controls=document.createElement('div');controls.className='cin-controls';
-  text.append(speaker,line,controls);layout.append(art,text);panel.append(header,layout);
-  const base= scenes[stage]||[];
-  const step=lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]);
+  const background=document.createElement('div');background.className='scene-backdrop scene-'+stage;
+  const heading=document.createElement('div');heading.className='scene-title';heading.textContent=title.replace(/<[^>]*>/g,'');
+  const actors=document.createElement('div');actors.className='scene-actors';
+  const box=document.createElement('div');box.className='scene-caption';
+  const nameTag=document.createElement('strong');nameTag.className='scene-speaker';
+  const dialogue=document.createElement('p');dialogue.className='scene-line';
+  const hint=document.createElement('div');hint.className='scene-hint';
+  const choices=document.createElement('div');choices.className='scene-choices';
+  box.append(nameTag,dialogue,hint,choices);panel.append(background,heading,actors,box);
+  const base=scenes[stage]||[];
+  const script=lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]);
   lastSceneStage=stage;
-  // First terminal / quiz uses its existing question as the last spoken line.
-  let cursor=0;
-  function say(name,msg){
-   speaker.textContent=name;
-   art.innerHTML=portrait(name);
-   line.textContent=msg;
+  const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
+  for(const who of participants){
+   const actor=document.createElement('div');actor.className='scene-actor';actor.dataset.who=who;
+   actor.innerHTML=portrait(who);actors.append(actor);
   }
-  function options(){
+  let index=0,advance=null,buttonsShown=[],selected=0;
+  function speak(who,msg){
+   nameTag.textContent=who;dialogue.textContent=msg;
+   for(const actor of actors.children)actor.classList.toggle('speaking',actor.dataset.who===who);
+  }
+  function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
+  function offer(){
    if(token!==session)return;
-   const who=speakerByStage[stage]||'DARIO';
-   say(who,body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim());
-   controls.replaceChildren();
-   for(const b of buttons){
-    const btn=document.createElement('button');btn.textContent=b.text;btn.className=b.alt?'alt':'';
-    btn.onclick=()=>{
+   advance=null;choices.replaceChildren();buttonsShown=[];
+   speak(speakerByStage[stage]||'DARIO',body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim());
+   hint.textContent='CHOOSE RESPONSE · ↑ ↓ / ENTER';
+   for(const option of buttons){
+    const button=document.createElement('button');button.textContent=option.text;
+    if(option.alt)button.className='alt';
+    button.onclick=()=>{
      if(token!==session)return;
-     if(b.alt){panel.classList.remove('cinematic-panel');b.fn();return}
-     // Interleave Dario's response before executing the original gameplay callback.
-     say('DARIO',b.text);
-     controls.replaceChildren();
-     const next=document.createElement('button');next.textContent='CONFIRM CHOICE ›';
-     next.onclick=()=>{if(token!==session)return;panel.classList.remove('cinematic-panel');b.fn()};
-     controls.append(next);
+     if(option.alt){panel.classList.remove('cinematic-panel','cinematic-scene');option.fn();return}
+     speak('DARIO',option.text);choices.replaceChildren();buttonsShown=[];
+     hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
+     advance=()=>{panel.classList.remove('cinematic-panel','cinematic-scene');advance=null;option.fn()};
     };
-    controls.append(btn);
+    choices.append(button);buttonsShown.push(button);
    }
+   selected=0;mark();
   }
-  function nextLine(){
+  function next(){
    if(token!==session)return;
-   if(cursor>=step.length){options();return}
-   const [who,msg]=step[cursor++];say(who,msg);
-   controls.replaceChildren();
-   const next=document.createElement('button');next.textContent=cursor<step.length?'CONTINUE ›':'YOUR RESPONSE ›';
-   next.onclick=nextLine;controls.append(next);
+   if(index>=script.length){offer();return}
+   const [who,msg]=script[index++];speak(who,msg);
+   choices.replaceChildren();buttonsShown=[];
+   hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';advance=next;
   }
-  nextLine();
+  function onKey(event){
+   if(token!==session)return;
+   const key=event.key.toLowerCase();
+   if(![' ','enter','e','arrowup','arrowdown'].includes(key))return;
+   event.preventDefault();event.stopImmediatePropagation();
+   if(event.repeat)return;
+   if(buttonsShown.length){
+    if(key==='arrowup')selected=(selected+buttonsShown.length-1)%buttonsShown.length;
+    if(key==='arrowdown')selected=(selected+1)%buttonsShown.length;
+    if([' ','enter','e'].includes(key))buttonsShown[selected].click();
+    mark();
+   }else if(advance&&[' ','enter','e'].includes(key))advance();
+  }
+  if(window.__sceneCleanup)window.__sceneCleanup();
+  window.addEventListener('keydown',onKey,true);
+  window.__sceneCleanup=()=>window.removeEventListener('keydown',onKey,true);
+  next();
  }
  modal=function(title,body,buttons){
   const panel=document.querySelector('#panel');panel.classList.remove('cinematic-panel');
   if(isStory(title)){show(title,body,buttons);return}
-  ++session;baseModal(title,body,buttons);
+  ++session;if(window.__sceneCleanup)window.__sceneCleanup();baseModal(title,body,buttons);
  };
  const originalClose=closeModal;
- closeModal=function(){++session;document.querySelector('#panel').classList.remove('cinematic-panel');originalClose()};
+ closeModal=function(){++session;if(window.__sceneCleanup)window.__sceneCleanup();document.querySelector('#panel').classList.remove('cinematic-panel','cinematic-scene');originalClose()};
 })();
