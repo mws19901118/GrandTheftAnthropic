@@ -1,7 +1,7 @@
 // Optional HQ defense; no campaign stage renumbering.
 (function(){
  const rounds=[
-  {who:'ALICE',q:'Fake investor demos are flooding the HQ network.',yes:'ISOLATE THE DEMO NETWORK',no:'LIVESTREAM THE INCIDENT',good:'The demos are quarantined. One tried to upsell its own firewall.',bad:'You turned a breach into a product launch.'},
+  {who:'ALICE',q:'A bot swarm posing as investors is flooding HQ. Alice patches in from the NVIDIA loading dock.',yes:'ISOLATE THE DEMO NETWORK',no:'LIVESTREAM THE INCIDENT',good:'Nice isolation, Dario. The NVIDIA shipment tracker is clean too. One bot tried to sell us its own firewall.',bad:'You just gave the attackers a livestream audience. Jensen is charging for the bandwidth.'},
   {who:'JENSEN',q:'Rivals are diverting the Blackwell shipment.',yes:'VERIFY THE GPU ALLOCATION',no:'SEND A SLIDE DECK',good:'The GPUs are safe. My jacket still has a higher insurance premium.',bad:'The attackers sent a deck too. Theirs had better margins.'},
   {who:'SAM',q:'A forged AGI safety memo is circulating.',yes:'PUBLISH VERIFIED FACTS',no:'DELETE THE LOGS AND BLAME THE BOARD',good:'An evidence-based response? You make sarcasm difficult.',bad:'That is a board meeting with extra steps.'}
  ];
@@ -29,7 +29,7 @@
   if(running&&!locked&&stage>=4&&stage<missions.length&&!storyMissionState.hqDefenseDone){
    const pos=driving?car:player;
    if(closeEntry(pos,siteEntry(sites[0]))){
-    modal('ANTHROPIC HQ · UNDER SIEGE','ALICE: Dario, HQ is under attack. Jensen and Sam are on the emergency channel. Defend headquarters?',
+    modal('ANTHROPIC HQ · UNDER SIEGE','DARIO: Someone is hitting HQ with investor bots, GPU diversion orders and forged safety memos. Alice is calling from the NVIDIA depot; Sam joined the channel to be unhelpful. Defend HQ?',
      [{text:'DEFEND HQ',fn:play},{text:'NOT NOW',alt:true,fn:closeModal}]);return;
    }
   }
