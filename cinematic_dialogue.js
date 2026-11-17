@@ -70,22 +70,45 @@
   const base=scenes[stage]||[];
   const script=lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]);
   lastSceneStage=stage;
+  const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice',SAM:'sam',LIANG:'liang',ELON:'elon',SUNDAR:'sundar',ZUCK:'zuck','THE MARKET':'the_market'};
+  // Scene-appropriate resting pose. The active speaker may use a gesture pose.
+  // Only clean, production-ready files are eligible; *_reference.webp is never loaded.
+  const seatedStages=new Set([2,3,4,7,8,9]);
+  const restPose=seatedStages.has(stage)?'sit':'stand';
   const participants=[...new Set(script.map(v=>v[0]).concat(['DARIO']))].slice(0,3);
+  const actorImages=new Map();
   for(const who of participants){
    const actor=document.createElement('div');actor.className='scene-actor';actor.dataset.who=who;
-   const artFiles={DARIO:'dario',JENSEN:'jensen',ALICE:'alice',SAM:'sam',LIANG:'liang',ELON:'elon',SUNDAR:'sundar',ZUCK:'zuck','THE MARKET':'the_market'};
-   if(artFiles[who]){
+   const slug=artFiles[who];
+   if(slug){
     const img=document.createElement('img');img.className='scene-character-art';
-    img.alt=who+' illustrated character';img.src='assets/cutscenes/characters/'+artFiles[who]+'.png';
-    img.onerror=()=>{actor.innerHTML=portrait(who)};
-    actor.append(img);
+    img.alt=who+' illustrated character';img.decoding='async';
+    actor.append(img);actorImages.set(who,{img,slug,pose:'',request:0});
    }else actor.innerHTML=portrait(who);
    actors.append(actor);
   }
+  function setPose(who,pose){
+   const entry=actorImages.get(who);
+   if(!entry||entry.pose===pose)return;
+   entry.pose=pose;
+   const request=++entry.request;
+   const root='assets/cutscenes/characters/'+entry.slug;
+   // Production pose WebP -> optional PNG pose -> original working portrait.
+   const candidates=pose==='stand'?[root+'_stand.webp',root+'.png']:[root+'_'+pose+'.webp',root+'_'+pose+'.png',root+'.png'];
+   let next=0;
+   function tryNext(){
+    if(request!==entry.request)return;
+    if(next>=candidates.length){entry.img.remove();entry.img=null;const actor=[...actors.children].find(a=>a.dataset.who===who);if(actor)actor.innerHTML=portrait(who);actorImages.delete(who);return}
+    entry.img.src=candidates[next++];
+   }
+   entry.img.onerror=tryNext;
+   tryNext();
+  }
+  for(const who of participants)setPose(who,restPose);
   let index=0,advance=null,buttonsShown=[],selected=0;
   function speak(who,msg){
    nameTag.textContent=who;dialogue.textContent=msg;
-   for(const actor of actors.children)actor.classList.toggle('speaking',actor.dataset.who===who);
+   for(const actor of actors.children){const active=actor.dataset.who===who;actor.classList.toggle('speaking',active);setPose(actor.dataset.who,active?'gesture':restPose)}
   }
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
