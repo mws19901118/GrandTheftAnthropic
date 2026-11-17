@@ -68,7 +68,7 @@
    if(!roadSurface(z.x,z.y)&&!restrictedSite(z.x,z.y)){glow(z.x,z.y,90,z.c,.10);billboard(z.x,z.y,z.label,z.c)}
   }
   const industrial=[{x:1700,y:2800},{x:2110,y:2890},{x:3860,y:2940},{x:4270,y:2950}];
-  for(const z of industrial){if(!visible(z.x,z.y,1250)||roadSurface(z.x,z.y)||restrictedSite(z.x,z.y))continue;
+  for(const z of industrial){if(!visible(z.x,z.y,1250)||roadSurface(z.x,z.y)||restrictedSite(z.x,z.y)||propertyDefs.some(p=>Math.hypot(p.x-z.x,p.y-z.y)<270))continue;
    for(let i=0;i<3;i++){const x=z.x+i*42;prism(x,z.y,35,29,20,i%2?'#5b7880':'#906e61');const p=iso(x,z.y,25);ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillStyle='#d5e9d6';ctx.fillText('GPU',p.x,p.y)}
   }
   for(let i=0;i<12;i++){const x=190+i*67,y=1500+(i%2)*85;if(visible(x,y)&&!roadSurface(x,y)&&!restrictedSite(x,y))i%3?planter(x,y,i):benches(x,y)}
