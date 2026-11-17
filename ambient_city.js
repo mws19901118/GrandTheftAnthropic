@@ -3,14 +3,15 @@
 (() => {
  'use strict';
  const people=[],traffic=[];
- const image=new Image();image.src='assets/environment/dario.svg';
+ const citizenImages=Array.from({length:6},(_,i)=>{const im=new Image();im.src='assets/environment/citizen_'+(i+1)+'.svg';return im});
+ const carImages=Array.from({length:5},(_,i)=>{const im=new Image();im.src='assets/environment/civilian_car_'+(i+1)+'.svg';return im});
  const colors=['#f7a5cb','#6eddd4','#f5d184','#8c9cdd','#d6a0f2','#7ac49a','#f29b78','#b4cee4'];
  const horizontal=ROADS.filter(r=>r.w>r.h&&r.kind!=='access'&&r.w>700);
  const vertical=ROADS.filter(r=>r.h>r.w&&r.kind!=='access'&&r.h>700);
  // Only straight road segments; cars turn at the end and remain on-road.
  for(let i=0;i<5;i++){
   const road=horizontal[i%horizontal.length],forward=i%2===0;
-  traffic.push({road,axis:'x',v:forward?1:-1,x:road.x+road.w*(.15+i*.15),y:road.y+road.h*(forward?.35:.65),speed:1.2+i*.23,color:colors[i]});
+  traffic.push({road,axis:'x',v:forward?1:-1,x:road.x+road.w*(.15+i*.15),y:road.y+road.h*(forward?.35:.65),speed:1.2+i*.23,color:colors[i],variant:i%5});
  }
  const pedestrianRoutes=[
   [290,1270,1300,1270],[1650,1260,2370,1260],
@@ -20,7 +21,7 @@
  ];
  for(let i=0;i<8;i++){
   const [x1,y1,x2,y2]=pedestrianRoutes[i];
-  people.push({x:x1+i*15,y:y1,from:x1,to:x2,dir:1,speed:.43+(i%3)*.12,color:colors[i]});
+  people.push({x:x1+i*15,y:y1,from:x1,to:x2,dir:1,speed:.43+(i%3)*.12,color:colors[i],variant:i%6});
  }
  let elapsed=0;
  const near=(x,y)=>{const p=driving?car:player;return Math.abs(x-p.x)<1050&&Math.abs(y-p.y)<1050};
@@ -45,6 +46,7 @@
  function drawPed(p){
   const pos=iso(p.x,p.y,5);
   ctx.save();
+  const image=citizenImages[p.variant];
   if(image.complete&&image.naturalWidth){
    ctx.translate(pos.x,pos.y);if(p.dir<0)ctx.scale(-1,1);
    ctx.drawImage(image,-13,-47,26,47);
@@ -55,8 +57,11 @@
   ctx.restore();
  }
  function drawCar(v){
-  // Reuse the existing optimized car sprite, preserving the same draw ordering.
-  spriteCar(v.x,v.y,v.v>0?0:Math.PI,v.color);
+  const im=carImages[v.variant];
+  if(!im.complete||!im.naturalWidth){spriteCar(v.x,v.y,v.v>0?0:Math.PI,v.color);return}
+  const p=iso(v.x,v.y,8),w=75,h=w*im.naturalHeight/im.naturalWidth;
+  ctx.save();ctx.translate(p.x,p.y);if(v.v<0)ctx.scale(-1,1);
+  ctx.drawImage(im,-w/2,-h*.73,w,h);ctx.restore();
  }
  window.ambientCity={
   update,
