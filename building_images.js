@@ -18,7 +18,8 @@
   const p=driving?car:player;
   if(i===1){oldTower(s,i);return;}
   if(Math.abs(p.x-s.x)+Math.abs(p.y-s.y)>2900)return;
-  if(!sprite(main[i],s.x,s.y,365,315))oldTower(s,i);
+  const width=[3,4,5,6,7].includes(i)?290:365;
+  if(!sprite(main[i],s.x,s.y,width,315))oldTower(s,i);
  };
  // NVIDIA remains handled by warehouse_art.js.
  window.drawPropertySprite=function(d){
