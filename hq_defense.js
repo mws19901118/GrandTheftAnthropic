@@ -4,7 +4,7 @@
  let session=null,raf=0,ui=null;
  const lanes=['NETWORK','GPU SUPPLY','SAFETY FILES'];
  function active(){return running&&stage===4&&!storyMissionState.hqDefenseDone}
- function clean(){if(raf)cancelAnimationFrame(raf);raf=0;if(ui){ui.remove();ui=null}session=null}
+ function clean(){if(raf)cancelAnimationFrame(raf);raf=0;if(ui){ui.remove();ui=null;locked=false}session=null}
  function end(win){
   const score=session?session.score:0,integrity=session?session.integrity:0;
   clean();
@@ -19,7 +19,7 @@
   }
  }
  function fire(lane){
-  if(!session||!ui||locked)return;
+  if(!session||!ui)return;
   const now=performance.now();
   if(now-session.lastFire<360)return;
   session.lastFire=now;
@@ -29,7 +29,7 @@
   else{session.integrity=Math.max(0,session.integrity-2);session.flash=-1;session.flashUntil=now+220}
  }
  function launch(){
-  clean();closeModal();
+  clean();closeModal();locked=true;
   session={start:performance.now(),last:performance.now(),lastSpawn:performance.now(),lastFire:0,bots:[],score:0,integrity:100,flash:-2,flashUntil:0};
   ui=document.createElement('div');ui.id='hq-arcade';ui.style.cssText='position:fixed;z-index:10000;inset:0;background:rgba(3,8,22,.93);color:#f1f7ff;font:15px system-ui;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
   ui.innerHTML='<div style="width:min(680px,100%);background:#122035;border:2px solid #66e6d2;border-radius:14px;padding:22px;box-shadow:0 0 40px #000"><h2 style="margin:0 0 8px;color:#66e6d2">ANTHROPIC · FIREWALL UNDER SIEGE</h2><p style="margin:0 0 12px">UNKNOWN BOT SWARM · Intercept incoming packets before they reach HQ. Press <b>1 / 2 / 3</b> or click a lane. Missed packets damage the core; firing at an empty lane costs 2 integrity.</p><div id="hq-readout" style="font-weight:bold;margin-bottom:14px"></div><div id="hq-lanes"></div><p style="font-size:12px;opacity:.8">SYSTEM: Packet signatures are unverified. Focus on protecting the three infrastructure lanes.</p><button id="hq-abort" style="padding:9px 16px;border:1px solid #ddd;border-radius:7px;background:#263a50;color:white;cursor:pointer">PAUSE · RETURN TO CITY</button></div>';
