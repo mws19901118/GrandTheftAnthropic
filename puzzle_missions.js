@@ -1,9 +1,9 @@
 // Non-quiz missions: OpenAI signal decoder and Google approval routing.
 (function(){
  let overlay=null;
- function clear(){if(overlay){overlay.remove();overlay=null}}
+ function clear(){if(overlay){overlay.remove();overlay=null;locked=false}}
  function setup(title,desc){
-  clear();overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(4,9,22,.94);display:flex;align-items:center;justify-content:center;padding:15px;box-sizing:border-box;color:#eef7ff;font:15px system-ui';
+  clear();locked=true;overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(4,9,22,.94);display:flex;align-items:center;justify-content:center;padding:15px;box-sizing:border-box;color:#eef7ff;font:15px system-ui';
   const c=document.createElement('div');c.style.cssText='width:min(620px,100%);max-height:90vh;overflow:auto;background:#17283d;border:2px solid #75d7ca;border-radius:14px;padding:22px';
   const h=document.createElement('h2');h.textContent=title;h.style.color='#75e7d8';c.appendChild(h);const p=document.createElement('p');p.textContent=desc;c.appendChild(p);overlay.appendChild(c);document.body.appendChild(overlay);return c;
  }
