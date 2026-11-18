@@ -2,7 +2,7 @@
 // Delivery/escape continuations stay uninterrupted; no campaign stages are renumbered.
 (function(){
  const chapters=new Set([0,2,4,5,7,8,9]);
- const briefingNumber=()=>stage===4?(storyMissionState.hqDefenseDone?'03B':'03A'):(['01',null,'02',null,null,'04',null,'05','06','07'][stage]||'00');
+ const briefingNumber=()=>stage===4?(storyMissionState.hqDefenseDone?'04':'03'):(['01',null,'02',null,null,'05',null,'06','07','08'][stage]||'00');
  const briefingKey=()=>stage===4?(storyMissionState.hqDefenseDone?'4-deepseek':'4-defense'):String(stage);
  const briefing={
   0:['GPU PROCUREMENT','CLAUDE CODE: Dario, we need Blackwell GPUs. Meet Jensen at NVIDIA. Secure a Blackwell shipment and bring it back intact.'],
@@ -11,7 +11,7 @@
   5:['THE GROKFATHER','CLAUDE CODE: Reach xAI Colossus. Secure available compute capacity before the server launch window closes.'],
   7:['TPU APPROVAL','CLAUDE CODE: Sundar has TPU capacity, but the approval graph is a maze. Route the dependencies in the correct order at Gemini Tower.'],
   8:['META DISTRIBUTION','CLAUDE CODE: Meta has three Zucks and one real signature. Interview the doubles and verify the dealmaker before signing.'],
-  9:['IPO LAUNCH','CLAUDE CODE: The market is ready to panic. Head to the exchange and survive three shocks without sacrificing liquidity, confidence or compliance.']
+  9:['IPO LAUNCH','CLAUDE CODE: The market is ready to panic. Head to the exchange and survive five market shocks while protecting liquidity, confidence, compliance and runway.']
  };
  function pending(){return running&&stage<missions.length&&chapters.has(stage)&&!(storyMissionState.briefedStages||[]).map(String).includes(briefingKey())}
  function atHQ(){return closeEntry(driving?car:player,siteEntry(sites[0]))}
