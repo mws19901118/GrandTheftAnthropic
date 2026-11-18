@@ -57,19 +57,35 @@
  }
  function market(){
   if(gpu<100||safety<40){toast('IPO NOT READY · NEED 100 COMPUTE AND 40 SAFETY');return}
-  const card=open('THE MARKET · IPO CRISIS ROOM','Survive three market shocks. Balance confidence, liquidity and compliance. Each lever has a cost; keep all indicators above zero.');
-  let round=0,confidence=65,liquidity=65,compliance=65;
+  const card=open('THE MARKET · IPO WAR ROOM','Five escalating shocks. Protect confidence, liquidity, compliance and runway. Every intervention has a tradeoff; the market punishes weak reserves at each close.');
+  let round=0,confidence=60,liquidity=65,compliance=60,runway=55,failures=0;
   const phases=[
-   {title:'COMPETITOR LAUNCH',opts:[['PUBLISH VERIFIED BENCHMARKS',15,-10,8],['BUY INFLUENCER HYPE',25,-30,-20],['WAIT FOR EVIDENCE',-12,10,10]]},
-   {title:'GPU PRICE SHOCK',opts:[['OPTIMIZE INFERENCE',5,15,5],['BUY EMERGENCY CAPACITY',10,-35,0],['HIDE THE COSTS',10,5,-35]]},
-   {title:'SAFETY HEARING',opts:[['SHOW AUDIT LOGS',10,-10,25],['PROMISE AGI NEXT WEEK',25,5,-30],['PAUSE THE IPO',-30,10,15]]}
+   {title:'RIVAL MODEL LAUNCH',drain:[10,5,3,4],opts:[['PUBLISH REPRODUCIBLE BENCHMARKS',15,-12,10,-6],['BUY VIRAL HYPE',22,-22,-16,-12],['DELAY THE ROADSHOW',-7,9,12,8]]},
+   {title:'GPU SUPPLY CRUNCH',drain:[5,13,3,11],opts:[['NEGOTIATE RESERVED CAPACITY',7,-17,6,15],['OPTIMIZE SERVING COSTS',3,12,3,10],['BUY SPOT COMPUTE',12,-25,0,-18]]},
+   {title:'REGULATORY HEARING',drain:[9,4,17,6],opts:[['OPEN INDEPENDENT AUDIT',8,-14,22,-6],['PROMISE AGI NEXT WEEK',24,8,-28,-12],['PAUSE THE LISTING',-18,8,14,8]]},
+   {title:'SHORT SELLER ATTACK',drain:[17,13,5,9],opts:[['DISCLOSE VERIFIED FINANCIALS',12,-9,15,3],['LAUNCH EMERGENCY BUYBACK',19,-25,0,-14],['CUT CASH BURN',-8,14,4,20]]},
+   {title:'FINAL PRICING WINDOW',drain:[13,13,12,12],opts:[['PRICE CONSERVATIVELY',7,13,8,6],['CHASE A RECORD VALUATION',25,-22,-10,-18],['FUND LAST-MINUTE AUDIT',4,-12,19,-6]]}
   ];
-  const info=line(card,'');const actions=document.createElement('div');card.appendChild(actions);
+  const info=line(card,''),feedback=line(card,''),actions=document.createElement('div');card.appendChild(actions);
   function render(){
-   if(round===3){showDialog('THE MARKET','Your paperwork survived the market. Somehow.');win();return}
-   const p=phases[round];info.textContent=p.title+' · CONFIDENCE '+confidence+' · LIQUIDITY '+liquidity+' · COMPLIANCE '+compliance;actions.replaceChildren();
-   p.opts.forEach(([name,c,l,s])=>button(actions,name,()=>{confidence+=c;liquidity+=l;compliance+=s;if(Math.min(confidence,liquidity,compliance)<=0){cash=Math.max(0,cash-100);confidence=65;liquidity=65;compliance=65;round=0;line(card,'MARKET PANIC · -$100 · Crisis reset');}else round++;render()}));
-  }render();button(card,'EXIT EXCHANGE',close);
+   if(round===phases.length){showDialog('THE MARKET','Five shocks survived. Your cash flow, disclosures and valuation all made it to the opening bell.');win();return}
+   const p=phases[round];
+   info.textContent='SHOCK '+(round+1)+'/5 · '+p.title+' | CONFIDENCE '+confidence+' | LIQUIDITY '+liquidity+' | COMPLIANCE '+compliance+' | RUNWAY '+runway+' · Minimum 20 each';
+   actions.replaceChildren();
+   p.opts.forEach(([name,c,l,s,r])=>button(actions,name,()=>{
+    confidence=Math.max(0,Math.min(100,confidence+c-p.drain[0]));
+    liquidity=Math.max(0,Math.min(100,liquidity+l-p.drain[1]));
+    compliance=Math.max(0,Math.min(100,compliance+s-p.drain[2]));
+    runway=Math.max(0,Math.min(100,runway+r-p.drain[3]));
+    if(Math.min(confidence,liquidity,compliance,runway)<20){
+     failures++;cash=Math.max(0,cash-100);
+     confidence=60;liquidity=65;compliance=60;runway=55;round=0;
+     feedback.textContent='MARKET PANIC · -$100 · All indicators must remain at least 20. Attempt '+(failures+1);
+    }else{round++;feedback.textContent='CLOSING BELL · All four indicators survived this shock.'}
+    render();
+   }));
+  }
+  render();button(card,'EXIT EXCHANGE',close);
  }
  const original=challenge;
  challenge=function(m){if(m.kind==='poker'){deepseek();return}if(m.kind==='zuck'){meta();return}if(m.kind==='market'){market();return}original(m)};
