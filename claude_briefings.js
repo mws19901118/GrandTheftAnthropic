@@ -2,6 +2,7 @@
 // Delivery/escape continuations stay uninterrupted; no campaign stages are renumbered.
 (function(){
  const chapters=new Set([0,2,4,5,7,8,9]);
+ const briefingNumber=()=>stage===4?(storyMissionState.hqDefenseDone?'03B':'03A'):(['01',null,'02',null,null,'04',null,'05','06','07'][stage]||'00');
  const briefingKey=()=>stage===4?(storyMissionState.hqDefenseDone?'4-deepseek':'4-defense'):String(stage);
  const briefing={
   0:['GPU PROCUREMENT','CLAUDE CODE: Dario, we need Blackwell GPUs. Meet Jensen at NVIDIA. Secure a Blackwell shipment and bring it back intact.'],
@@ -37,10 +38,10 @@
    ['accent','✳ Claude Code'],
    ['dim','Working directory: /anthropic/ipo-heist'],
    ['dim','Session: dario · local mission briefing'],
-   ['accent','> /mission '+String(stage+1).padStart(2,'0')+' --brief'],
+   ['accent','> /mission '+briefingNumber()+' --brief'],
    ['dim','Reading mission context...'],
    ['success','✓ City map loaded  ✓ Mission objectives synchronized'],
-   ['accent','MISSION: '+title],
+   ['accent','CHAPTER '+briefingNumber()+' · '+title],
    ['normal',msg.replace(/^CLAUDE CODE:\s*/,'')],
    ['dim','Risk check: '+(stage===4&&!storyMissionState.hqDefenseDone?'Unknown bot swarm; attribution unverified.':stage===9?'Market volatility; protect compliance.':'Use your judgment. The board will not.')],
    ['accent','CLAUDE CODE: Dario, execute when ready.'],
