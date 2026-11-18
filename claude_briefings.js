@@ -70,8 +70,7 @@
   typeNext();
  }
  // Defense and DeepSeek share stage 4: completing the defense opens a second HQ briefing.
-  const originalDefenseComplete=window.hqDefenseTargetSite;
-   const baseInteract=interact;
+  const baseInteract=interact;
  interact=function(){
   if(pending()){if(atHQ())dispatch();else toast('RETURN TO ANTHROPIC HQ · GET YOUR CLAUDE CODE BRIEFING');return}
   return baseInteract();
