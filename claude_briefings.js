@@ -2,20 +2,22 @@
 // Delivery/escape continuations stay uninterrupted; no campaign stages are renumbered.
 (function(){
  const chapters=new Set([0,2,4,5,7,8,9]);
+ const briefingKey=()=>stage===4?(storyMissionState.hqDefenseDone?'4-deepseek':'4-defense'):String(stage);
  const briefing={
-  0:['GPU PROCUREMENT','CLAUDE CODE: Dario, we need Blackwell GPUs. Meet Jensen at NVIDIA. Alice controls her own commercial terms. Bring the shipment back intact.'],
+  0:['GPU PROCUREMENT','CLAUDE CODE: Dario, we need Blackwell GPUs. Meet Jensen at NVIDIA. Secure a Blackwell shipment and bring it back intact.'],
   2:['OPENAI INFILTRATION','CLAUDE CODE: The AGI definition file is inside Sam’s rooftop vault. Memorize its changing access signals and get out before the board changes its mind.'],
-  4:['HQ UNDER SIEGE','CLAUDE CODE: Anonymous investor bots are attacking our network. Defend the three firewall lanes for 45 seconds. Do not accuse Alice, Sam or Jensen without evidence.'],
-  5:['THE R1 GAMBIT','CLAUDE CODE: Liang says our model is expensive. Go to DeepSeek Casino and beat his efficiency benchmark with a limited compute budget.'],
+  4:['HQ UNDER SIEGE','CLAUDE CODE: An unidentified bot swarm is attacking our network. Defend the three firewall lanes for 45 seconds.'],
+  5:['THE GROKFATHER','CLAUDE CODE: Reach xAI Colossus. Secure available compute capacity before the server launch window closes.'],
   7:['TPU APPROVAL','CLAUDE CODE: Sundar has TPU capacity, but the approval graph is a maze. Route the dependencies in the correct order at Gemini Tower.'],
   8:['META DISTRIBUTION','CLAUDE CODE: Meta has three Zucks and one real signature. Interview the doubles and verify the dealmaker before signing.'],
   9:['IPO LAUNCH','CLAUDE CODE: The market is ready to panic. Head to the exchange and survive three shocks without sacrificing liquidity, confidence or compliance.']
  };
- function pending(){return running&&stage<missions.length&&chapters.has(stage)&&!(storyMissionState.briefedStages||[]).includes(stage)}
+ function pending(){return running&&stage<missions.length&&chapters.has(stage)&&!(storyMissionState.briefedStages||[]).map(String).includes(briefingKey())}
  function atHQ(){return closeEntry(driving?car:player,siteEntry(sites[0]))}
  function teleport(){const h=sites[0];driving=false;velocity={x:0,y:0};player={x:h.x+18,y:h.y+90};car={x:h.x+100,y:h.y+120,a:0};wanted=0;deadline=0;checkpoint=null}
  function dispatch(){
-  const [title,msg]=briefing[stage];
+  const [title,msg]=stage===4&&storyMissionState.hqDefenseDone?['THE R1 GAMBIT','CLAUDE CODE: Proceed to DeepSeek Casino. Test model quality against compute and inference costs. Optimize the resource allocation before returning.']:briefing[stage];
+  const key=briefingKey();
   const terminal=document.createElement('div');
   terminal.id='claude-code-terminal';
   terminal.style.cssText='position:fixed;inset:0;z-index:11000;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(2,6,13,.94);color:#d7e4da;font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
@@ -40,7 +42,7 @@
    ['success','✓ City map loaded  ✓ Mission objectives synchronized'],
    ['accent','MISSION: '+title],
    ['normal',msg.replace(/^CLAUDE CODE:\s*/,'')],
-   ['dim','Risk check: '+(stage===4?'Unknown bot swarm; attribution unverified.':stage===9?'Market volatility; protect compliance.':'Use your judgment. The board will not.')],
+   ['dim','Risk check: '+(stage===4&&!storyMissionState.hqDefenseDone?'Unknown bot swarm; attribution unverified.':stage===9?'Market volatility; protect compliance.':'Use your judgment. The board will not.')],
    ['accent','CLAUDE CODE: Dario, execute when ready.'],
    ['normal','DARIO: So this is what an AI agent means by “a quick task.”'],
    ['success','? Accept this assignment?']
@@ -51,7 +53,7 @@
   function accept(){
    if(!alive)return;
    const list=storyMissionState.briefedStages||[];
-   if(!list.includes(stage))list.push(stage);
+   if(!list.map(String).includes(key))list.push(key);
    storyMissionState.briefedStages=list;
    cleanup();
    showDialog('DARIO','Assignment received. Time to turn this prompt into a very expensive road trip.');
@@ -67,7 +69,9 @@
   function typeNext(){if(!alive)return;if(step<entries.length){add(entries[step++]);if(step===entries.length)ready();else setTimeout(typeNext,step<5?110:220)}}
   typeNext();
  }
- const baseInteract=interact;
+ // Defense and DeepSeek share stage 4: completing the defense opens a second HQ briefing.
+  const originalDefenseComplete=window.hqDefenseTargetSite;
+   const baseInteract=interact;
  interact=function(){
   if(pending()){if(atHQ())dispatch();else toast('RETURN TO ANTHROPIC HQ · GET YOUR CLAUDE CODE BRIEFING');return}
   return baseInteract();
