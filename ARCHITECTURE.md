@@ -1,24 +1,48 @@
-# Current Architecture (v0.9 baseline)
+# Architecture
 
-## Entry and runtime
-- `index.html`: loads CSS and JavaScript files; run by opening locally in a modern browser.
-- `style.css`: HUD, dialogs, modals, start screen.
-- `story.js`: `missions` array (10 campaign stages) and narrative reward/effect configuration.
-- `properties.js`: `propertyDefs` array, prices, upgrades, resource yields and world coordinates.
-- `asset_missions.js`: `assetMissions` object, timed waypoint sequences and rewards.
-- `game.js`: canvas drawing, world layout, collision, driving, police, economy tick, main/asset mission execution, controls, HUD.
+Grand Theft Anthropic is a dependency-free browser game. JavaScript files use **classic scripts** (not ES modules), sharing top-level game state and functions. The order in `index.html` is intentional.
 
-## Current map assumptions
-- `WORLD={w:2550,h:1860}`; roads derive from `RX` and `RY` axis-aligned coordinate arrays.
-- `sites` coordinates and district rendering live in `game.js`, while properties and side-mission waypoints live in data files.
-- `roadSurface(x,y)` determines road speed advantage; building collision uses runtime geometry.
-- The renderer is procedural 2.5D Canvas; no imported asset pipeline.
+## Runtime modules
 
-## Important technical debt
-- `game.js` (~27KB) still combines world data, physics, UI and rendering. Extract `world.js` (map data), `renderer.js` (Canvas), `physics.js` (movement/collision), `economy.js` and `missions.js` as work warrants.
-- A map redesign requires coordinated waypoint updates across `game.js`, `properties.js` and `asset_missions.js`; introduce named locations or location IDs to avoid hardcoded duplicated coordinates.
-- Economy uses time-based production but side gigs are instantaneous. Ensure sufficient cash and time for property acquisition, and avoid infinite trivial payouts if balance matters.
-- The game has not been verified with an end-to-end browser test in this handoff; establish baseline behavior first.
+| File | Responsibility |
+| --- | --- |
+| `index.html`, `style.css` | Document structure, UI styling, script load order |
+| `map.js` | City geometry, site locations and roads |
+| `story.js` | Campaign stages, rewards and objectives |
+| `properties.js`, `asset_missions.js` | Property and side-mission data |
+| `story_missions.js` | Story-specific interactions and timed transitions |
+| `game.js` | Shared runtime state, input, physics, police, world update, HUD and rendering |
+| `game_persistence.js` | Versioned localStorage saves, validation and legacy migration |
+| `game_contracts.js` | Courier contracts, checkpoints, payouts and cooldowns |
+| `game_assets.js` | Garage, property purchases, production and asset missions |
+| `hq_defense.js` | HQ firewall minigame |
+| `mission_arcade.js`, `puzzle_missions.js` | Interactive chapter minigames |
+| `claude_briefings.js` | HQ terminal briefings and mission gating |
+| `cinematic_dialogue.js` | Cutscenes and dialogue presentation |
+| `visuals.js` and remaining `*_art.js` / `*_sprites.js` files | Visuals, world decoration and ambient rendering |
+
+## Script order and coupling
+
+The data files load first, then `game.js` declares shared state. Persistence, contracts and assets load **immediately after** `game.js` and before other systems. Their function declarations are called by the game loop only after page scripts have loaded.
+
+Do not add `type="module"`, `defer`, or independently reorder scripts without migrating shared globals. All game-facing strings remain English.
+
+## State and recovery
+
+- Saves use `gta_anthropic_v14_save`; legacy v12/v13 saves are readable.
+- Courier and asset runs store their checkpoint index and remaining active-play time.
+- Timed story stages store a remaining duration instead of a raw `performance.now()` deadline.
+- World simulation pauses while modal minigames are open.
+- The NVIDIA loading animation is intentionally non-saveable until dispatch completes.
+
+## Validation
+
+Run `node tests/static-checks.mjs` from the repository root. This checks syntax, expected script order and key runtime boundaries. It is **not** a replacement for browser smoke tests of movement, saving, retrying and campaign completion.
+
+## Technical debt
+
+`game.js` still owns physics, police, world update and rendering. Further extraction should be incremental and backed by browser tests. `claude_briefings.js` wraps global interactions and progression; changing those hooks requires care. Prefer stable state interfaces over additional wrappers.
 
 ## Controls
-WASD/arrows move; E interact/vehicle/property/waypoint; Space boost; B property portfolio; G freelance side gig; R restart campaign.
+
+WASD/arrows move; E interacts/enters vehicle/activates checkpoints; Space boosts; B opens portfolio; G starts courier contracts; U opens garage; P saves; L loads; Shift+R requests restart confirmation.
