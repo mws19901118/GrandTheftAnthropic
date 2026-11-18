@@ -150,7 +150,34 @@ function assetInteract(){
  else toast('OBJECTIVE COMPLETE · NEXT CHECKPOINT');
  return true;
 }
-function propertyMenu(d){let o=ownedProperties[d.id];let detail=d.desc+'<br><br>Price: $'+d.price+' · Upgrade: $'+d.upgrade+'<br>Status: '+(o?'LEVEL '+o.level:'FOR SALE')+'<br><br>Pays every 45 seconds of active play, including after the IPO. Production pauses when inputs are insufficient.';let options=[];if(!o){options.push({text:'BUY FOR $'+d.price,fn:()=>{if(cash<d.price){toast('NOT ENOUGH CASH');return}cash-=d.price;ownedProperties[d.id]={level:1};closeModal();toast('PROPERTY ACQUIRED · '+d.name)}})}else if(o.level<2){options.push({text:'UPGRADE FOR $'+d.upgrade,fn:()=>{if(cash<d.upgrade){toast('NOT ENOUGH CASH');return}cash-=d.upgrade;o.level=2;closeModal();toast('PROPERTY UPGRADED · LEVEL 2')}})}options.push(...(o?[{text:(completedAssetMissions[d.id]?'REPLAY':'START')+' · '+assetMissions[d.id].title,fn:()=>startAssetMission(d.id)}]:[]));options.push({text:'CLOSE',alt:true,fn:closeModal});modal(d.name,detail,options)}
+function propertyMenu(d){
+ const o=ownedProperties[d.id],price=o?d.upgrade:d.price,canPurchase=!o||o.level<2;
+ const missing=Math.max(0,price-cash);
+ const detail=d.desc+'<br><br>Purchase: $'+d.price+' · Upgrade: $'+d.upgrade+
+  '<br>Status: '+(o?'LEVEL '+o.level:'FOR SALE')+
+  '<br><b>Available cash: $'+cash+'</b>'+
+  (canPurchase&&missing?'<br><strong style="color:#ff8e8e">INSUFFICIENT FUNDS · NEED $'+missing+' MORE</strong>':'')+
+  '<br><br>Pays every 45 seconds of active play, including after the IPO. Production pauses when inputs are insufficient.';
+ const options=[];
+ function insufficient(){
+  const panel=document.querySelector('#panel');
+  let warning=panel.querySelector('#property-funds-warning');
+  if(!warning){warning=document.createElement('p');warning.id='property-funds-warning';warning.style.cssText='padding:12px;background:#52202a;border:1px solid #ff9a9a;border-radius:8px;color:#fff;font-weight:bold';panel.appendChild(warning)}
+  warning.textContent='INSUFFICIENT FUNDS · Available $'+cash+' · Required $'+price+' · Need $'+Math.max(0,price-cash)+' more';
+  toast('NEED $'+Math.max(0,price-cash)+' MORE');
+ }
+ if(!o)options.push({text:missing?'BUY · NEED $'+missing+' MORE':'BUY FOR $'+d.price,fn:()=>{
+  if(cash<d.price){insufficient();return}
+  cash-=d.price;ownedProperties[d.id]={level:1};closeModal();toast('PROPERTY ACQUIRED · '+d.name);
+ }});
+ else if(o.level<2)options.push({text:missing?'UPGRADE · NEED $'+missing+' MORE':'UPGRADE FOR $'+d.upgrade,fn:()=>{
+  if(cash<d.upgrade){insufficient();return}
+  cash-=d.upgrade;o.level=2;closeModal();toast('PROPERTY UPGRADED · LEVEL 2');
+ }});
+ if(o)options.push({text:(completedAssetMissions[d.id]?'REPLAY':'START')+' · '+assetMissions[d.id].title,fn:()=>startAssetMission(d.id)});
+ options.push({text:'CLOSE',alt:true,fn:closeModal});
+ modal(d.name,detail,options);
+}
 function portfolio(){let rows=propertyDefs.map(d=>{let o=ownedProperties[d.id];return '<b>'+d.name+'</b> — '+(o?'LEVEL '+o.level:'NOT OWNED')+(completedAssetMissions[d.id]?' · CONTRACT CLEARED':'')+'<br><small>'+d.desc+'</small>'}).join('<br><br>');modal('ASSET <span>EMPIRE</span>',rows+'<br><br>Properties pay every 45 seconds of active gameplay. [G] completes repeatable freelance contracts (+cash). Time to next payday: '+Math.ceil((ECONOMY_INTERVAL-economyElapsed)/1000)+'s. Freelance cooldown: '+Math.ceil(gigCooldown/1000)+'s.',[{text:'CLOSE',fn:closeModal}])}
 function showDialog(w,t){const d=document.querySelector('#dialog');d.innerHTML='<strong>'+w+'</strong><p>'+t+'</p>';d.style.display='block';dialogEnd=performance.now()+5500}
 function toast(t){document.querySelector('#toast').textContent=t;document.querySelector('#toast').style.opacity=1;toastEnd=performance.now()+2200}
