@@ -1,9 +1,9 @@
 // Interactive mission variety: resource optimization, evidence investigation, and IPO stress test.
 (function(){
  let panel=null;
- function close(){if(panel){panel.remove();panel=null}}
+ function close(){if(panel){panel.remove();panel=null;locked=false}}
  function open(title,description){
-  close();panel=document.createElement('div');panel.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(3,9,22,.94);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;color:#eef9ff;font:15px system-ui';
+  close();locked=true;panel=document.createElement('div');panel.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(3,9,22,.94);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;color:#eef9ff;font:15px system-ui';
   const card=document.createElement('div');card.style.cssText='width:min(640px,100%);max-height:90vh;overflow:auto;padding:22px;background:#15243b;border:2px solid #61d9c9;border-radius:14px';
   const h=document.createElement('h2');h.textContent=title;h.style.color='#71ead8';card.appendChild(h);
   const p=document.createElement('p');p.textContent=description;card.appendChild(p);
