@@ -72,7 +72,22 @@
  // Defense and DeepSeek share stage 4: completing the defense opens a second HQ briefing.
   const baseInteract=interact;
  interact=function(){
-  if(pending()){if(atHQ())dispatch();else toast('RETURN TO ANTHROPIC HQ · GET YOUR CLAUDE CODE BRIEFING');return}
+  if(pending()){
+   // Side activities must remain playable while a main-story briefing is pending.
+   // Keep property purchases, asset checkpoints, freelance deliveries and vehicle controls available.
+   const pos=driving?car:player;
+   if(gigRun&&gigTarget()&&closeEntry(pos,siteEntry(gigTarget()))){finishGig();return}
+   if(assetRun&&assetInteract())return;
+   const property=propertyDefs.find(d=>closeEntry(pos,propertyEntry(d)));
+   if(property){propertyMenu(property);return}
+   if(atHQ()){dispatch();return}
+   if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}
+   if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}
+   const target=sites[missions[stage].site];
+   if(closeEntry(pos,siteEntry(target))){toast('MAIN STORY LOCKED · GET YOUR CLAUDE CODE BRIEFING AT HQ');return}
+   toast('MAIN STORY: HQ BRIEFING PENDING · SIDE ACTIVITIES AVAILABLE');
+   return;
+  }
   return baseInteract();
  };
  const baseAdvance=advance;
