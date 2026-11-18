@@ -1,5 +1,5 @@
 // Mandatory arcade defense between the OpenAI escape and DeepSeek.
-// Attackers are anonymous bots; Alice verifies independent logistics, Sam checks a forged memo.
+// Attackers are anonymous bots; no character identities are presented as suspects.
 (function(){
  let session=null,raf=0,ui=null;
  const lanes=['NETWORK','GPU SUPPLY','SAFETY FILES'];
@@ -11,7 +11,7 @@
   if(win){
    storyMissionState.hqDefenseDone=true;
    cash+=300+score*10;gpu+=12;safety=Math.min(100,safety+Math.round(integrity/10));hype=Math.min(100,hype+5);
-   wanted=0;closeModal();showDialog('DARIO','The bot swarm is offline. Its owner is still unknown. Alice saved the shipment records, Sam authenticated the memo, and I saved the IPO.');
+   wanted=0;closeModal();showDialog('DARIO','The bot swarm is offline. Its origin remains unknown. The firewall is holding, and the IPO is still alive.');
    toast('HQ DEFENDED · +$'+(300+score*10)+' · +12 GPU');
   }else{
    safety=Math.max(0,safety-5);closeModal();
@@ -32,7 +32,7 @@
   clean();closeModal();
   session={start:performance.now(),last:performance.now(),lastSpawn:performance.now(),lastFire:0,bots:[],score:0,integrity:100,flash:-2,flashUntil:0};
   ui=document.createElement('div');ui.id='hq-arcade';ui.style.cssText='position:fixed;z-index:10000;inset:0;background:rgba(3,8,22,.93);color:#f1f7ff;font:15px system-ui;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
-  ui.innerHTML='<div style="width:min(680px,100%);background:#122035;border:2px solid #66e6d2;border-radius:14px;padding:22px;box-shadow:0 0 40px #000"><h2 style="margin:0 0 8px;color:#66e6d2">ANTHROPIC · FIREWALL UNDER SIEGE</h2><p style="margin:0 0 12px">UNKNOWN BOT SWARM · Intercept incoming packets before they reach HQ. Press <b>1 / 2 / 3</b> or click a lane. Missed packets damage the core; firing at an empty lane costs 2 integrity.</p><div id="hq-readout" style="font-weight:bold;margin-bottom:14px"></div><div id="hq-lanes"></div><p style="font-size:12px;opacity:.8">ALICE: I have isolated the forged shipping orders. My company is not your firewall.<br>SAM: That forged memo is not mine. My real memos are much longer.</p><button id="hq-abort" style="padding:9px 16px;border:1px solid #ddd;border-radius:7px;background:#263a50;color:white;cursor:pointer">PAUSE · RETURN TO CITY</button></div>';
+  ui.innerHTML='<div style="width:min(680px,100%);background:#122035;border:2px solid #66e6d2;border-radius:14px;padding:22px;box-shadow:0 0 40px #000"><h2 style="margin:0 0 8px;color:#66e6d2">ANTHROPIC · FIREWALL UNDER SIEGE</h2><p style="margin:0 0 12px">UNKNOWN BOT SWARM · Intercept incoming packets before they reach HQ. Press <b>1 / 2 / 3</b> or click a lane. Missed packets damage the core; firing at an empty lane costs 2 integrity.</p><div id="hq-readout" style="font-weight:bold;margin-bottom:14px"></div><div id="hq-lanes"></div><p style="font-size:12px;opacity:.8">SYSTEM: Packet signatures are unverified. Focus on protecting the three infrastructure lanes.</p><button id="hq-abort" style="padding:9px 16px;border:1px solid #ddd;border-radius:7px;background:#263a50;color:white;cursor:pointer">PAUSE · RETURN TO CITY</button></div>';
   document.body.appendChild(ui);
   const board=ui.querySelector('#hq-lanes');
   lanes.forEach((name,i)=>{let row=document.createElement('button');row.type='button';row.dataset.lane=i;row.style.cssText='display:block;width:100%;text-align:left;margin:10px 0;padding:13px;background:#1b3145;border:1px solid #607d91;border-radius:8px;color:white;cursor:pointer;font:inherit';row.onclick=()=>fire(i);board.appendChild(row)});
