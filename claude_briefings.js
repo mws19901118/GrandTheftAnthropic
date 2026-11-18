@@ -44,7 +44,6 @@
    ['normal',msg.replace(/^CLAUDE CODE:\s*/,'')],
    ['dim','Risk check: '+(stage===4&&!storyMissionState.hqDefenseDone?'Unknown bot swarm; attribution unverified.':stage===9?'Market volatility; protect compliance.':'Use your judgment. The board will not.')],
    ['accent','CLAUDE CODE: Dario, execute when ready.'],
-   ['normal','DARIO: So this is what an AI agent means by “a quick task.”'],
    ['success','? Accept this assignment?']
   ];
   const palette={dim:'#81958b',accent:'#e9ae80',success:'#8fe1ad',normal:'#dce9df'};
@@ -56,8 +55,9 @@
    if(!list.map(String).includes(key))list.push(key);
    storyMissionState.briefedStages=list;
    cleanup();
-   showDialog('DARIO','Assignment received. Time to turn this prompt into a very expensive road trip.');
-   toast('CLAUDE CODE · NEW OBJECTIVE UNLOCKED');
+   if(key==='4-defense'&&typeof window.launchHQDefense==='function'){
+    window.launchHQDefense();
+   }else toast('CLAUDE CODE · NEW OBJECTIVE UNLOCKED');
   }
   function later(){if(alive){cleanup();toast('BRIEFING PAUSED · PRESS E TO REOPEN')}}
   function button(label,fn){const el=document.createElement('button');el.textContent=label;el.style.cssText='padding:10px 15px;background:#293c33;color:#c8f5d4;border:1px solid #598b6d;border-radius:6px;font:inherit;cursor:pointer';el.onclick=fn;controls.appendChild(el)}
