@@ -74,7 +74,7 @@
   const dialogue=document.createElement('p');dialogue.className='scene-line';
   const hint=document.createElement('div');hint.className='scene-hint';
   const choices=document.createElement('div');choices.className='scene-choices';
-  const continueButton=document.createElement('button');continueButton.className='scene-continue';continueButton.textContent='CONTINUE  ▸  [ENTER / SPACE / E]';continueButton.style.cssText='display:none;margin-top:12px;padding:11px 17px;background:#304c61;color:#fff;border:1px solid #88c2d0;border-radius:8px;cursor:pointer;font:inherit';continueButton.onclick=()=>{if(token===session&&advance)advance()};
+  const continueButton=document.createElement('button');continueButton.className='scene-continue';continueButton.textContent='CONTINUE ▸';continueButton.style.cssText='display:none;margin-top:12px;padding:11px 17px;background:#304c61;color:#fff;border:1px solid #88c2d0;border-radius:8px;cursor:pointer;font:inherit';continueButton.onclick=()=>{if(token===session&&advance)advance()};
   box.append(nameTag,dialogue,hint,choices,continueButton);panel.append(background,heading,actors,box);
   const base=scenes[stage]||[];
   const script=customScript||(lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]));
@@ -266,8 +266,9 @@
   function offer(){
    if(token!==session)return;
    advance=null;choices.replaceChildren();buttonsShown=[];continueButton.style.display='none';
-   speak(speakerByStage[stage]||'DARIO',body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim());
-   hint.textContent='CHOOSE RESPONSE · ↑ ↓ / ENTER';
+   if(body.trim())speak(speakerByStage[stage]||'DARIO',body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim());
+   hint.textContent=buttons.length>1?'CHOOSE A RESPONSE':'';
+   if(buttons.length===1&&buttons[0].text==='CONTINUE'){advance=()=>{panel.classList.remove('cinematic-panel','cinematic-scene');advance=null;buttons[0].fn()};syncContinue();return}
    for(const [choiceIndex,option] of buttons.entries()){
     const button=document.createElement('button');button.textContent=option.text;
     if(option.alt)button.className='alt';
@@ -278,7 +279,7 @@
      choices.replaceChildren();buttonsShown=[];
      const context=quizContext(option,choiceIndex);
      speak(context?'DARIO':'DARIO',context?'I am going with: '+option.text:option.text);
-     hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
+     hint.textContent='';
      let beat=0;
      advance=()=>{
       if(beat<exchange.length){const [who,line]=exchange[beat++];speak(who,line);syncContinue();return}
@@ -295,7 +296,7 @@
    if(index>=script.length){offer();return}
    const [who,msg]=script[index++];speak(who,msg);
    choices.replaceChildren();buttonsShown=[];
-   hint.textContent='PRESS CONTINUE TO ADVANCE THE DIALOGUE';advance=next;syncContinue();
+   hint.textContent='';advance=next;syncContinue();
   }
   function onKey(event){
    if(token!==session)return;
