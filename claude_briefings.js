@@ -73,6 +73,7 @@
  // Defense and DeepSeek share stage 4: completing the defense opens a second HQ briefing.
   const baseInteract=interact;
  interact=function(){
+  if(stage===0&&storyMissionState.loadingUntil){toast('BLACKWELL LOADING · PLEASE WAIT');return}
   if(pending()){
    // Side activities must remain playable while a main-story briefing is pending.
    // Keep property purchases, asset checkpoints, freelance deliveries and vehicle controls available.
