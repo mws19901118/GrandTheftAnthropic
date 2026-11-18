@@ -74,7 +74,8 @@
   const dialogue=document.createElement('p');dialogue.className='scene-line';
   const hint=document.createElement('div');hint.className='scene-hint';
   const choices=document.createElement('div');choices.className='scene-choices';
-  box.append(nameTag,dialogue,hint,choices);panel.append(background,heading,actors,box);
+  const continueButton=document.createElement('button');continueButton.className='scene-continue';continueButton.textContent='CONTINUE  ▸  [ENTER / SPACE / E]';continueButton.style.cssText='display:none;margin-top:12px;padding:11px 17px;background:#304c61;color:#fff;border:1px solid #88c2d0;border-radius:8px;cursor:pointer;font:inherit';continueButton.onclick=()=>{if(token===session&&advance)advance()};
+  box.append(nameTag,dialogue,hint,choices,continueButton);panel.append(background,heading,actors,box);
   const base=scenes[stage]||[];
   const script=customScript||(lastSceneStage===stage?[[speakerByStage[stage],missions[stage].line]]:(base.length?base:[[speakerByStage[stage],missions[stage].line]]));
   if(!customScript)lastSceneStage=stage;
@@ -260,10 +261,11 @@
    if(choiceCount<=1)return [];
    return [["DARIO","That is a choice. The incident report will have a very specific footnote."]];
   }
+  function syncContinue(){continueButton.style.display=advance&&!buttonsShown.length?'inline-block':'none'}
   function mark(){buttonsShown.forEach((button,i)=>button.classList.toggle('selected',i===selected))}
   function offer(){
    if(token!==session)return;
-   advance=null;choices.replaceChildren();buttonsShown=[];
+   advance=null;choices.replaceChildren();buttonsShown=[];continueButton.style.display='none';
    speak(speakerByStage[stage]||'DARIO',body.replace(/<br\s*\/?\s*>/gi,' · ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim());
    hint.textContent='CHOOSE RESPONSE · ↑ ↓ / ENTER';
    for(const [choiceIndex,option] of buttons.entries()){
@@ -279,21 +281,21 @@
      hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';
      let beat=0;
      advance=()=>{
-      if(beat<exchange.length){const [who,line]=exchange[beat++];speak(who,line);return}
+      if(beat<exchange.length){const [who,line]=exchange[beat++];speak(who,line);syncContinue();return}
       panel.classList.remove('cinematic-panel','cinematic-scene');
       advance=null;option.fn();
-     };
+     };syncContinue();
     };
     choices.append(button);buttonsShown.push(button);
    }
-   selected=0;mark();
+   selected=0;mark();syncContinue();
   }
   function next(){
    if(token!==session)return;
    if(index>=script.length){offer();return}
    const [who,msg]=script[index++];speak(who,msg);
    choices.replaceChildren();buttonsShown=[];
-   hint.textContent='SPACE / ENTER / E TO CONTINUE ▸';advance=next;
+   hint.textContent='PRESS CONTINUE TO ADVANCE THE DIALOGUE';advance=next;syncContinue();
   }
   function onKey(event){
    if(token!==session)return;
