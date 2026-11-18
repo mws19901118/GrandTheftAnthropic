@@ -39,6 +39,7 @@
   ui.querySelector('#hq-abort').onclick=()=>{clean();toast('HQ DEFENSE PAUSED · RETURN TO ANTHROPIC HQ TO RESUME')};
   raf=requestAnimationFrame(tick);
  }
+ window.launchHQDefense=launch;
  function tick(t){
   if(!session)return;
   if(!running){clean();return}
@@ -67,7 +68,7 @@
   if(active()){
    const p=driving?car:player;
    if(closeEntry(p,siteEntry(sites[0]))){
-    modal('ANTHROPIC HQ · UNDER SIEGE','An anonymous bot swarm is attacking the HQ network, GPU supply and safety files. Defend the core for 45 seconds using a three-lane interception console. Alice and Sam provide evidence; neither is identified as the attacker.',[{text:'START FIREWALL DEFENSE',fn:launch},{text:'NOT YET',alt:true,fn:closeModal}]);
+    modal('ANTHROPIC HQ · UNDER SIEGE','An anonymous bot swarm is attacking the HQ network, GPU supply and safety files. Defend the core for 45 seconds using a three-lane interception console. The source of the bot swarm remains unknown.',[{text:'START FIREWALL DEFENSE',fn:launch},{text:'NOT YET',alt:true,fn:closeModal}]);
    }else toast('RETURN TO ANTHROPIC HQ · DEFEND THE CORE');
    return;
   }
