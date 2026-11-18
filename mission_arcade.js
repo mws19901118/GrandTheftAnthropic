@@ -14,13 +14,32 @@
  function button(card,label,fn){const b=document.createElement('button');b.textContent=label;b.style.cssText='margin:6px 6px 6px 0;padding:10px 14px;background:#29445d;color:white;border:1px solid #75b4c7;border-radius:8px;cursor:pointer;font:inherit';b.onclick=fn;card.appendChild(b);return b}
  function win(){close();advance()}
  function deepseek(){
-  const card=open('THE R1 GAMBIT · COMPUTE LAB','LIANG: Spend at most 100 compute credits. Reach quality 80 with cost at most 75. Tune your model instead of answering a quiz.');
-  const vals=[40,20,20],names=['TRAINING','DISTILLATION','CACHE'],inputs=[];
-  names.forEach((n,i)=>{let row=document.createElement('div');row.style.margin='14px 0';const label=line(row,n+' · '+vals[i]);const input=document.createElement('input');input.type='range';input.min=0;input.max=80;input.step=5;input.value=vals[i];input.style.width='100%';input.oninput=()=>{vals[i]=Number(input.value);label.textContent=n+' · '+vals[i];refresh()};row.appendChild(input);card.appendChild(row);inputs.push(input)});
-  const stats=line(card,'');
-  function refresh(){const spent=vals.reduce((a,b)=>a+b,0),quality=Math.round(25+vals[0]*.5+vals[1]*.9+vals[2]*.85),cost=Math.round(vals[0]*.9+vals[1]*.5+vals[2]*.35);stats.textContent='COMPUTE '+spent+'/100 · QUALITY '+quality+'/80 · INFERENCE COST '+cost+'/75';return spent<=100&&quality>=80&&cost<=75}
+  const card=open('THE R1 GAMBIT · MULTI-WORKLOAD OPTIMIZER','LIANG: One model configuration must survive three different workloads. Tune training, distillation and cache within a 100-credit budget. Each benchmark has different quality, latency and inference-cost requirements.');
+  const names=['TRAINING','DISTILLATION','CACHE'],vals=[40,25,20],inputs=[];
+  let round=0,failures=0;
+  const workloads=[
+   {name:'REASONING BENCHMARK',quality:79,cost:65,latency:76,weights:[.95,.60,.35],latencyWeights:[.2,.35,.8]},
+   {name:'LOW-COST INFERENCE',quality:74,cost:47,latency:67,weights:[.48,.95,.55],latencyWeights:[.1,.4,1]},
+   {name:'REAL-TIME AGENT',quality:76,cost:58,latency:58,weights:[.62,.65,.8],latencyWeights:[.15,.35,1.2]}
+  ];
+  names.forEach((n,i)=>{const row=document.createElement('div');row.style.margin='10px 0';const label=line(row,n+' · '+vals[i]);const input=document.createElement('input');input.type='range';input.min=0;input.max=80;input.step=5;input.value=vals[i];input.style.width='100%';input.oninput=()=>{vals[i]=Number(input.value);label.textContent=n+' · '+vals[i];refresh()};row.appendChild(input);card.appendChild(row);inputs.push(input)});
+  const stats=line(card,''),feedback=line(card,'');
+  function metrics(){
+   const w=workloads[round],spent=vals.reduce((a,b)=>a+b,0);
+   return {spent,quality:Math.round(20+vals.reduce((sum,v,i)=>sum+v*w.weights[i],0)),cost:Math.round(vals[0]*.82+vals[1]*.45+vals[2]*.27),latency:Math.round(105-vals.reduce((sum,v,i)=>sum+v*w.latencyWeights[i],0))};
+  }
+  function refresh(){
+   const w=workloads[round],m=metrics();
+   stats.textContent='WORKLOAD '+(round+1)+'/3 · '+w.name+' | COMPUTE '+m.spent+'/100 | QUALITY '+m.quality+' ≥ '+w.quality+' | COST '+m.cost+' ≤ '+w.cost+' | LATENCY '+m.latency+' ≤ '+w.latency;
+   return m.spent<=100&&m.quality>=w.quality&&m.cost<=w.cost&&m.latency<=w.latency;
+  }
   refresh();
-  button(card,'RUN BENCHMARK',()=>{if(refresh()){showDialog('LIANG','You optimized the model instead of buying a second warehouse. Annoyingly efficient.');win()}else{cash=Math.max(0,cash-20);line(card,'Benchmark failed. -$20 test fee. Rebalance your compute allocation.')}});
+  button(card,'RUN BENCHMARK',()=>{
+   if(!refresh()){failures++;cash=Math.max(0,cash-20);feedback.textContent='BENCHMARK FAILED · -$20. Check all four constraints. Attempts: '+failures;return}
+   round++;
+   if(round===workloads.length){showDialog('LIANG','You optimized for reasoning, cost and latency. Now that is an actual benchmark.');win();return}
+   feedback.textContent='✓ WORKLOAD PASSED · Next workload has different constraints. Re-tune your allocation.';refresh();
+  });
   button(card,'LEAVE LAB',close);
  }
  function meta(){
