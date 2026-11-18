@@ -6,7 +6,7 @@
  const briefingKey=()=>stage===4?(storyMissionState.hqDefenseDone?'4-deepseek':'4-defense'):String(stage);
  const briefing={
   0:['GPU PROCUREMENT','CLAUDE CODE: Dario, we need Blackwell GPUs. Meet Jensen at NVIDIA. Secure a Blackwell shipment and bring it back intact.'],
-  2:['OPENAI INFILTRATION','CLAUDE CODE: The AGI definition file is inside Sam’s rooftop vault. Memorize its changing access signals and get out before the board changes its mind.'],
+  2:['OPENAI INFILTRATION','CLAUDE CODE: The AGI definition file is inside Sam’s rooftop vault. Pass its prompt-injection, retrieval-integrity and tool-permission gates, then get out before the board changes its mind.'],
   4:['HQ UNDER SIEGE','CLAUDE CODE: An unidentified bot swarm is attacking our network. Defend the three firewall lanes for 45 seconds.'],
   5:['THE GROKFATHER','CLAUDE CODE: Reach xAI Colossus. Secure available compute capacity before the server launch window closes.'],
   7:['TPU APPROVAL','CLAUDE CODE: Sundar has TPU capacity, but the approval graph is a maze. Route the dependencies in the correct order at Gemini Tower.'],
