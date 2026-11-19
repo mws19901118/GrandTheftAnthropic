@@ -1,0 +1,170 @@
+
+*{box-sizing:border-box}body{margin:0;background:#090d20;color:#f8f5ff;font-family:system-ui,Arial;overflow:hidden}canvas{width:100vw;height:100vh;display:block}#hud{position:absolute;top:15px;left:18px;text-shadow:0 2px 5px #000;pointer-events:none}#logo{font-size:24px;font-weight:1000;line-height:.95}#logo span{color:#ff5da9}#stats{font-size:13px;line-height:1.7;margin-top:10px}#quest{position:absolute;top:16px;right:17px;width:min(350px,43vw);background:#10162de8;border:1px solid #ff64ad77;border-radius:13px;padding:13px;box-shadow:0 10px 40px #0008;font-size:14px}#quest b{color:#ff8fc4}#quest p{line-height:1.45;margin:7px 0}#quest small{color:#f8d17d}#hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);border-radius:40px;background:#0b112be8;padding:9px 14px;font-size:12px;white-space:nowrap}#dialog{position:absolute;bottom:65px;left:50%;transform:translateX(-50%);width:min(650px,85vw);background:#141936f7;border:1px solid #ff65b5;border-radius:14px;padding:15px 18px;box-shadow:0 10px 50px #000b;display:none;font-size:15px;line-height:1.5}#dialog strong{color:#ff7bbd}#dialog p{margin:7px 0 0}#modal{position:absolute;inset:0;background:#060a1be8;display:grid;place-items:center;z-index:5}#panel{width:min(620px,92vw);padding:28px;border-radius:17px;border:1px solid #ff6baf77;background:linear-gradient(145deg,#222144,#11182d);text-align:center;box-shadow:0 18px 70px #000}h1{font-size:clamp(34px,6vw,62px);line-height:.95;margin:0 0 18px;letter-spacing:-2px}h1 span{color:#ff62b3}button{cursor:pointer;background:#ff5cac;color:#160a21;border:0;border-radius:9px;padding:12px 20px;font-weight:850;font-size:15px;margin:5px}button:hover{background:#ff96ce}button.alt{background:#273451;color:#fff;border:1px solid #67769a}#panel p{line-height:1.6}#panel small{color:#c1c5da}#toast{position:absolute;top:39%;left:50%;transform:translate(-50%,-50%);font-size:23px;font-weight:950;text-shadow:0 3px 9px black;opacity:0;pointer-events:none;text-align:center}#mobile{position:absolute;bottom:60px;left:8px;display:none}#mobile button{padding:10px;background:#273451e8;color:#fff}@media(pointer:coarse){#mobile{display:flex}#hint{font-size:10px}#logo{font-size:18px}#quest{font-size:12px;padding:8px}}
+
+#panel h1.busted{font-size:clamp(65px,13vw,130px);color:#f04456;text-shadow:4px 5px #330a1a;letter-spacing:2px;transform:rotate(-4deg)}
+
+#panel .failed{color:#f4d176;font-size:clamp(35px,8vw,74px);letter-spacing:-1px}#panel .busted{color:#f04456;font-size:clamp(70px,13vw,120px);font-weight:1000;letter-spacing:3px;text-shadow:5px 6px #330b1b}
+
+#story-status{display:none;position:fixed;top:165px;left:20px;z-index:9;padding:10px 15px;background:#120d24e8;color:#f8d77b;border:1px solid #ffce72;border-radius:8px;font:800 13px system-ui;letter-spacing:.07em;pointer-events:none}
+
+/* Clear, contextual interaction prompt. */
+#entry-hint{display:none;position:fixed;left:50%;bottom:23%;transform:translateX(-50%);background:#0b152de9;border:2px solid #75f6e6;color:#e9fff9;border-radius:12px;padding:12px 22px;font:800 14px system-ui;letter-spacing:.07em;text-align:center;box-shadow:0 0 24px #2cdec75b;pointer-events:none;z-index:8;max-width:85vw}
+
+
+/* Cinematic story dialogue: two-column bust and branching conversation. */
+#panel.cinematic-panel{width:min(900px,94vw);min-height:330px;text-align:left;padding:22px 25px;background:linear-gradient(135deg,#1b2442,#101426 65%,#29203d);border:2px solid #d85f9c}
+.cin-heading{font:900 clamp(17px,2.4vw,25px) system-ui;letter-spacing:.08em;color:#ff8fbd;border-bottom:1px solid #ffffff29;padding-bottom:12px;margin-bottom:10px}
+.cin-layout{display:grid;grid-template-columns:minmax(145px,31%) 1fr;gap:20px;align-items:stretch;min-height:255px}
+.cin-portrait{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 50% 50%,#43517b,#111729 75%);border:1px solid #ffffff2c}
+.cin-bust{width:100%;max-width:235px;height:255px;filter:drop-shadow(0 8px 13px #0008)}
+.cin-copy{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.cin-speaker{color:#f5c58c;font:900 18px system-ui;letter-spacing:.08em}
+#panel .cin-line{font-size:clamp(15px,1.8vw,19px);line-height:1.6;margin:12px 0 18px;overflow-wrap:anywhere}
+.cin-controls{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+.cin-controls button{font-size:13px;margin:0;padding:11px 15px;text-align:left;background:#253353;color:#fff;border:1px solid #62799e}
+.cin-controls button:hover,.cin-controls button:focus-visible{background:#a93677;color:#fff;border-color:#ff9bd1}
+.cin-controls button.alt{opacity:.78}
+@media(max-width:600px){#panel.cinematic-panel{padding:14px;max-height:90vh;overflow:auto}.cin-layout{grid-template-columns:105px 1fr;gap:10px;min-height:210px}.cin-bust{height:190px}.cin-controls button{font-size:11px;padding:9px}.cin-speaker{font-size:14px}#panel .cin-line{font-size:13px}}
+
+
+/* In-mission 2D cutscene: full illustrated set, characters, subtitle dialogue. */
+#panel.cinematic-scene{position:relative;width:min(1060px,96vw);height:min(670px,91vh);min-height:480px;overflow:hidden;padding:0;background:#101525;text-align:left;border:3px solid #17192c;box-shadow:0 25px 100px #000e}
+.scene-backdrop{position:absolute;inset:0;background:linear-gradient(0deg,#11142a 3%,transparent 50%),linear-gradient(125deg,#e8777e 0%,#bf5a9c 35%,#41387b 75%,#171d3d);pointer-events:none}
+.scene-backdrop:before{content:"";position:absolute;inset:20% 0 20%;background:repeating-linear-gradient(90deg,transparent 0 12%,#18233eaa 12% 18%,transparent 18% 23%),linear-gradient(0deg,#18223d 0 25%,transparent 25%);clip-path:polygon(0 28%,14% 28%,14% 5%,31% 5%,31% 32%,48% 32%,48% 0,62% 0,62% 22%,79% 22%,79% 9%,100% 9%,100% 100%,0 100%);opacity:.75}
+.scene-backdrop:after{content:"";position:absolute;left:-15%;right:-15%;bottom:21%;height:12%;background:repeating-linear-gradient(0deg,#24334b 0 5px,#161d35 5px 12px);transform:skewY(-3deg)}
+.scene-0{background:linear-gradient(0deg,#14222a,transparent 65%),linear-gradient(120deg,#4b824d,#9dc46c 35%,#263f52 85%)}
+.scene-2{background:linear-gradient(0deg,#111a35,transparent 65%),linear-gradient(110deg,#5a3b88,#f080b1 40%,#273c69)}
+.scene-4{background:linear-gradient(0deg,#2b173a,transparent 65%),linear-gradient(110deg,#342d78,#e267af 50%,#152d57)}
+.scene-5{background:linear-gradient(0deg,#1a1b35,transparent 65%),linear-gradient(110deg,#5c4f96,#b0a7f3 45%,#263e6c)}
+.scene-7{background:linear-gradient(0deg,#1c2e43,transparent 65%),linear-gradient(110deg,#386d99,#e9c378 45%,#31546f)}
+.scene-8{background:linear-gradient(0deg,#16233c,transparent 65%),linear-gradient(110deg,#336b9a,#8dbaff 45%,#223e6c)}
+.scene-9{background:linear-gradient(0deg,#2c1832,transparent 65%),linear-gradient(110deg,#b14c81,#f8b475 45%,#3c3e73)}
+.scene-title{position:absolute;z-index:3;top:17px;left:24px;color:#fff;font:900 clamp(16px,2.5vw,25px) system-ui;text-shadow:2px 3px #1118;letter-spacing:.07em}
+.scene-actors{position:absolute;inset:12% 4% 24%;display:flex;align-items:flex-end;justify-content:space-evenly;pointer-events:none}
+.scene-actor{width:min(34%,290px);height:100%;display:flex;align-items:flex-end;justify-content:center;filter:brightness(.53) saturate(.65);transform:translateY(18px) scale(.92);transition:filter .2s,transform .2s}
+.scene-actor.speaking{filter:brightness(1.13) saturate(1.15) drop-shadow(0 0 14px #fff5);transform:translateY(0) scale(1.08)}
+.scene-actor .cin-bust{height:100%;width:100%;max-width:none;filter:drop-shadow(6px 8px 0 #111a2f)}
+.scene-caption{position:absolute;z-index:4;left:2%;right:2%;bottom:2%;min-height:155px;padding:17px 22px;background:#0b1028f4;border:2px solid #f2c3d0;box-shadow:0 10px 35px #000a}
+.scene-speaker{font:900 18px system-ui;color:#ffc383;letter-spacing:.07em}
+#panel .scene-line{font:500 clamp(15px,1.9vw,21px)/1.45 system-ui;margin:7px 0;color:#fff}
+.scene-hint{font:800 11px system-ui;letter-spacing:.12em;color:#a5e8f2;margin-top:9px}
+.scene-choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.scene-choices button{font-size:12px;padding:9px 12px;margin:0;background:#273653;border:1px solid #607392;color:white;text-align:left}
+.scene-choices button.selected,.scene-choices button:hover{background:#a73776;border-color:#ffd4e8}
+@media(max-width:600px){#panel.cinematic-scene{min-height:440px;height:85vh}.scene-actors{inset:10% 0 28%}.scene-actor{width:40%}.scene-caption{padding:12px;max-height:55%;overflow:auto}.scene-title{font-size:14px}.scene-choices button{font-size:11px;padding:7px 9px}}
+
+
+/* Full-viewport mission cinematics, including on mobile and desktop. */
+#modal:has(.cinematic-scene){position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:99999!important;display:grid!important;place-items:stretch!important;padding:0!important;margin:0!important;background:#080c19!important}
+#panel.cinematic-scene{box-sizing:border-box!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#panel.cinematic-scene .scene-backdrop{background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-actors{inset:10% 8% 22%;justify-content:center;gap:min(6vw,90px)}
+#panel.cinematic-scene .scene-actor{width:min(29vw,360px)}
+#panel.cinematic-scene .scene-caption{left:3%;right:3%;bottom:3%;min-height:clamp(125px,20vh,205px);box-sizing:border-box}
+#panel.cinematic-scene .scene-title{top:3%;left:3%;font-size:clamp(18px,3vw,32px)}
+#panel.cinematic-scene .scene-0{background-image:linear-gradient(0deg,#06151e55,#06151e15),url('assets/buildings/nvidia_depot.png');background-size:cover;background-position:center 55%}
+#panel.cinematic-scene .scene-2{background-image:linear-gradient(0deg,#19133399,#1c154455),url('assets/buildings/openai_club.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-4{background-image:linear-gradient(0deg,#1d123a99,#1d123a55),url('assets/buildings/deepseek_casino.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-5{background-image:linear-gradient(0deg,#16163199,#16163155),url('assets/buildings/xai_colossus.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-7{background-image:linear-gradient(0deg,#13243c99,#13243c55),url('assets/buildings/gemini_tower.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-8{background-image:linear-gradient(0deg,#13243c99,#13243c55),url('assets/buildings/meta_mall.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-9{background-image:linear-gradient(0deg,#27152f99,#27152f55),url('assets/buildings/ipo_exchange.png');background-size:cover;background-position:center}
+#panel.cinematic-scene .scene-backdrop:before{opacity:.25}
+#panel.cinematic-scene .scene-backdrop:after{opacity:.15}
+@media(max-width:600px){#panel.cinematic-scene .scene-actors{inset:13% 1% 29%;gap:0}#panel.cinematic-scene .scene-actor{width:45vw}#panel.cinematic-scene .scene-caption{left:2%;right:2%;bottom:2%;min-height:145px}}
+
+
+/* Separated high-resolution cutscene layers. Missing assets fall back to the existing art. */
+#panel.cinematic-scene .scene-0{background-image:linear-gradient(0deg,#07141b66,#07141b05),url('assets/cutscenes/scenes/nvidia_depot.webp'),url('assets/buildings/nvidia_depot.png')}
+#panel.cinematic-scene .scene-2{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/openai_rooftop.webp'),url('assets/buildings/openai_club.png')}
+#panel.cinematic-scene .scene-4{background-image:linear-gradient(0deg,#160c2c55,#160c2c11),url('assets/cutscenes/scenes/deepseek_casino.webp'),url('assets/buildings/deepseek_casino.png')}
+#panel.cinematic-scene .scene-actors .scene-character-art{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(6px 8px 2px #050a18bb)}
+
+
+/* Phase 2 cutscene scenes: preserve original building images as fallback. */
+#panel.cinematic-scene .scene-5{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/xai_colossus.webp'),url('assets/buildings/xai_colossus.png')}
+#panel.cinematic-scene .scene-6{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/xai_colossus.webp'),url('assets/buildings/xai_colossus.png')}
+#panel.cinematic-scene .scene-8{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/meta_mall.webp'),url('assets/buildings/meta_mall.png')}
+#panel.cinematic-scene .scene-9{background-image:linear-gradient(0deg,#12152777,#12152716),url('assets/cutscenes/scenes/ipo_exchange.webp'),url('assets/buildings/ipo_exchange.png')}
+
+/* Cinematic compositing: ground the cast in the same light and perspective as the set. */
+#panel.cinematic-scene{--scene-rim:#8bbdd2;--scene-warm:#ffb36b;--floor-y:24%}
+#panel.cinematic-scene:has(.scene-0){--scene-rim:#9ae5a1;--scene-warm:#d4e7a0}
+#panel.cinematic-scene:has(.scene-2),#panel.cinematic-scene:has(.scene-3){--scene-rim:#d9a8f4;--scene-warm:#ffbd8c}
+#panel.cinematic-scene:has(.scene-4){--scene-rim:#b7a2ff;--scene-warm:#f5b56d}
+#panel.cinematic-scene:has(.scene-5),#panel.cinematic-scene:has(.scene-6){--scene-rim:#85caff;--scene-warm:#ff9a78}
+#panel.cinematic-scene:has(.scene-7){--scene-rim:#8fe0eb;--scene-warm:#d9e5fc}
+#panel.cinematic-scene:has(.scene-8){--scene-rim:#a6c6ff;--scene-warm:#f5b4e1}
+#panel.cinematic-scene:has(.scene-9){--scene-rim:#f6c0d6;--scene-warm:#f6c77c}
+#panel.cinematic-scene .scene-actors{
+  inset:14% 7% var(--floor-y);gap:clamp(8px,3vw,56px);
+  align-items:flex-end;isolation:isolate;perspective:1100px;
+}
+#panel.cinematic-scene .scene-actor{
+  position:relative;flex:0 1 29%;width:min(29vw,340px);
+  height:clamp(180px,58vh,650px);min-width:0;
+  transform:translateY(0) scale(.94);
+  transform-origin:center bottom;
+  filter:brightness(.82) saturate(.86);
+  transition:transform .28s ease,filter .28s ease;
+}
+#panel.cinematic-scene .scene-actor:nth-child(2){transform:translateY(7px) scale(.89)}
+#panel.cinematic-scene .scene-actor:nth-child(3){transform:translateY(13px) scale(.85)}
+#panel.cinematic-scene .scene-actor::before{
+  content:"";position:absolute;z-index:-1;bottom:-10px;left:13%;right:13%;
+  height:26px;border-radius:50%;background:#050711b8;
+  filter:blur(12px);transform:scaleX(1.15);
+}
+#panel.cinematic-scene .scene-actor::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 45%,color-mix(in srgb,var(--scene-rim) 15%,transparent) 100%);
+  mix-blend-mode:screen;opacity:.45;
+}
+#panel.cinematic-scene .scene-actors .scene-character-art{
+  width:100%;height:100%;max-height:100%;max-width:100%;
+  object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(2px 7px 4px #050713b0) drop-shadow(-2px 0 1px var(--scene-rim));
+}
+#panel.cinematic-scene .scene-actor.speaking{
+  transform:translateY(-4px) scale(1.015);
+  filter:brightness(1.04) saturate(1.04);
+}
+#panel.cinematic-scene .scene-backdrop::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to bottom,#060b1b44 0%,transparent 34%,#070b17aa 95%);
+  opacity:1;
+}
+@media(max-width:600px){
+ #panel.cinematic-scene .scene-actors{inset:17% 1% 31%;gap:0}
+ #panel.cinematic-scene .scene-actor{flex:0 1 33%;width:33vw;height:min(48vh,410px)}
+ #panel.cinematic-scene .scene-actor.speaking{transform:translateY(-3px) scale(1.04)}
+}
+
+/* Eye-line staging: mirrored portraits face conversation partners. */
+#panel.cinematic-scene .scene-actors .scene-character-art{
+ transition:transform .3s ease,filter .3s ease;
+ transform-origin:center bottom;
+}
+#panel.cinematic-scene .scene-actor.facing-left .scene-character-art{
+ transform:scaleX(-1);
+}
+#panel.cinematic-scene .scene-actor.facing-left .cin-bust{
+ transform:scaleX(-1);
+}
+
+/* Preserve physical blocking: speaking should brighten, not jump forward or resize. */
+#panel.cinematic-scene .scene-actor.speaking,
+#panel.cinematic-scene .scene-actor:nth-child(2).speaking,
+#panel.cinematic-scene .scene-actor:nth-child(3).speaking{
+ transform:translateY(0) scale(.94);
+ filter:brightness(1.06) saturate(1.03);
+}
+#panel.cinematic-scene .scene-actor:nth-child(2),
+#panel.cinematic-scene .scene-actor:nth-child(2).speaking{transform:translateY(7px) scale(.89)}
+#panel.cinematic-scene .scene-actor:nth-child(3),
+#panel.cinematic-scene .scene-actor:nth-child(3).speaking{transform:translateY(13px) scale(.85)}
+@media(max-width:600px){
+ #panel.cinematic-scene .scene-actor.speaking,
+ #panel.cinematic-scene .scene-actor:nth-child(2).speaking,
+ #panel.cinematic-scene .scene-actor:nth-child(3).speaking{filter:brightness(1.06) saturate(1.03)}
+}

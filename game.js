@@ -1,0 +1,292 @@
+// Game engine and rendering. Narrative data is loaded from story.js.
+
+const C=document.querySelector('#g'),ctx=C.getContext('2d');let W,H,dpr;function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);C.width=W*dpr;C.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}onresize=resize;resize();
+const keys={};
+
+let running=false,stage=0,cash=650,gpu=0,hype=15,safety=80,wanted=0,carrying=false,driving=false,player={x:800,y:1150},car={x:880,y:1170,a:0},cops=[{x:3900,y:2450},{x:3450,y:420}],deadline=0,dialogEnd=0,toastEnd=0,frame=0,locked=false,arrestStart=0,checkpoint=null,missionStart=null,missionBannerUntil=0;
+let ownedProperties={};
+// Vehicle handling, dynamic pursuers, cargo damage and persistent saves.
+let velocity={x:0,y:0}, cargoIntegrity=100, rivalVans=[], lastImpact=0, autoSaveElapsed=0;
+const POLICE_ESCAPE_DISTANCE=300,POLICE_ESCAPE_MS=15000;
+let policeEscapeElapsed=0;
+const SAVE_KEY='gta_anthropic_v14_save', LEGACY_SAVE_KEY='gta_anthropic_v13_save', OLDER_SAVE_KEY='gta_anthropic_v12_save';
+let difficulty='normal',gigRun=null,gigCompleted=0,vehicleUpgrade=0;
+const DIFFICULTY={casual:{rivalSpeed:.65,damage:.45,timer:1.65,arrest:2200},normal:{rivalSpeed:.83,damage:.7,timer:1.3,arrest:1550},hard:{rivalSpeed:1,damage:1,timer:1,arrest:1050}};
+const GARAGE={price:650,upgrade:450};
+function validPoint(x,y){return x>=30&&y>=30&&x<WORLD.w-30&&y<WORLD.h-30&&!restrictedSite(x,y)&&!blockedTerrain(x,y)}
+// Only a moving player-driven car can initiate a police collision.
+function checkPoliceRamming(previousX,previousY,speed){
+ if(!driving||wanted>0||speed<2.8)return;
+ for(const cop of cops){
+  const before=Math.hypot(previousX-cop.x,previousY-cop.y);
+  const after=Math.hypot(car.x-cop.x,car.y-cop.y);
+  if(after<64&&after<before){
+   wanted=1;arrestStart=0;policeEscapeElapsed=0;
+   velocity.x*=-.28;velocity.y*=-.28;
+   toast('POLICE VEHICLE RAMMED · WANTED ★');
+   return;
+  }
+ }
+}
+function resetVehicle(){velocity={x:0,y:0};cargoIntegrity=100;rivalVans=[];lastImpact=0}
+function chaseActive(){return (assetRun&&assetRun.id==='warehouse'&&assetRun.step>=1)||(stage===1&&carrying)}
+function spawnRivals(){rivalVans=[{x:car.x+330,y:car.y+170,vx:0,vy:0},{x:car.x-280,y:car.y-160,vx:0,vy:0}].map((v,i)=>({...v,x:Math.max(40,Math.min(WORLD.w-40,v.x)),y:Math.max(40,Math.min(WORLD.h-40,v.y)),id:i}))}
+function updateRivals(dt,t){if(!chaseActive()){rivalVans=[];return}if(!rivalVans.length)spawnRivals();let target=driving?car:player;
+ for(const v of rivalVans){let dx=target.x-v.x,dy=target.y-v.y,d=Math.hypot(dx,dy)||1;let rate=Math.min(1,dt/300),rivalSpeed=5.8*DIFFICULTY[difficulty].rivalSpeed;v.vx+=(dx/d*rivalSpeed-v.vx)*rate;v.vy+=(dy/d*rivalSpeed-v.vy)*rate;let nx=v.x+v.vx*dt/16.67,ny=v.y+v.vy*dt/16.67;if(validPoint(nx,v.y))v.x=nx;else v.vx*=-.5;if(validPoint(v.x,ny))v.y=ny;else v.vy*=-.5;
+ if(d<68&&t-lastImpact>1100){cargoIntegrity=Math.max(0,cargoIntegrity-Math.ceil((driving?17:24)*DIFFICULTY[difficulty].damage));lastImpact=t;wanted=Math.max(wanted,2);policeEscapeElapsed=0;toast('RIVAL RAMMED THE SHIPMENT · CARGO '+cargoIntegrity+'%');if(cargoIntegrity<=0){if(stage===1&&carrying)fail();else failAssetMission('CARGO DESTROYED');return}}}}
+function objectivePoint(){if(gigRun)return gigTarget();if(assetRun){let step=assetMissions[assetRun.id].steps[assetRun.step];return step?{x:step.x,y:step.y}:null}return stage<missions.length?(window.hqDefenseTargetSite&&window.hqDefenseTargetSite()||sites[missions[stage].site]):null}
+// Entry pads are intentionally on the SOUTH side of buildings, facing the nearest street.
+// Story and property coordinates remain unchanged.
+const ENTRY_RADIUS=112;
+// Entrance positions are authored per building to match its frontage and reachable roads.
+const ENTRY_LOCATIONS={
+ anthropic:{x:780,y:1080},nvidia:{x:1880,y:1080},openai:{x:2960,y:1080},
+ deepseek:{x:920,y:2240},gemini:{x:2050,y:2240},meta:{x:3180,y:2240},
+ ipo:{x:4260,y:2240},xai:{x:4260,y:2860},
+ warehouse:{x:1650,y:510},lab:{x:1000,y:2730},cloud:{x:3330,y:735}
+};
+function siteEntry(s){return {...ENTRY_LOCATIONS[s.id],site:s,kind:'site',label:s.n}}
+function propertyEntry(p){return {...ENTRY_LOCATIONS[p.id],property:p,kind:'property',label:p.name}}
+function currentEntry(){if(gigRun){let s=gigTarget();return s&&siteEntry(s)}if(assetRun){const step=assetMissions[assetRun.id].steps[assetRun.step];if(!step)return null;const s=sites.find(s=>Math.hypot(s.x-step.x,s.y-step.y)<12);const p=propertyDefs.find(p=>Math.hypot(p.x-step.x,p.y-step.y)<12);return s?siteEntry(s):p?propertyEntry(p):{x:step.x,y:step.y,kind:'checkpoint',label:step.label}}if(stage<missions.length)return siteEntry((window.hqDefenseTargetSite&&window.hqDefenseTargetSite()||sites[missions[stage].site]));return null}
+function closeEntry(p,e,r=ENTRY_RADIUS){return !!e&&Math.hypot(p.x-e.x,p.y-e.y)<r}
+function nearestEntry(p){const all=[...sites.map(siteEntry),...propertyDefs.map(propertyEntry)];return all.filter(e=>closeEntry(p,e)).sort((a,b)=>Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(p.x-b.x,p.y-b.y))[0]||null}
+function entryPrompt(){
+ const p=driving?car:player,e=nearestEntry(p),target=currentEntry();
+ if(!e)return null;
+ const active=!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25;
+ return {e,active,text:e.kind==='property'?'E · MANAGE '+e.label:active?'E · '+(gigRun?'CONTRACT CHECKPOINT':driving?'USE LOADING BAY / ENTER':'ENTER / INTERACT')+' · '+e.label:'E · VISIT '+e.label};
+}
+function drawEntryPad(e,t,active){const q=iso(e.x,e.y,9),pulse=.55+.45*Math.sin(t/340),color=active?'#ffdf75':e.kind==='property'?'#8cf5e3':'#9bacc9';ctx.save();ctx.translate(q.x,q.y);ctx.scale(1,.52);ctx.strokeStyle=color;ctx.lineWidth=active?6:3;ctx.shadowColor=color;ctx.shadowBlur=active?25:10;ctx.beginPath();ctx.arc(0,0,active?33+4*pulse:29,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=active?'#ffe9a0':'#e4e9f6';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.scale(1,1/.52);ctx.fillText(active?'MISSION':e.kind==='property'?'ASSET':'ENTRY',0,-33);ctx.restore()}
+function drawEntryPads(t){const target=currentEntry();const p=driving?car:player;for(const s of sites){const e=siteEntry(s);if(Math.hypot(e.x-p.x,e.y-p.y)<1100||target&&target.site===s)drawEntryPad(e,t,!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25)}for(const d of propertyDefs){const e=propertyEntry(d);if(Math.hypot(e.x-p.x,e.y-p.y)<950)drawEntryPad(e,t,!!target&&Math.hypot(e.x-target.x,e.y-target.y)<25)}if(target&&target.kind==='checkpoint')drawEntryPad(target,t,true)}
+function drawEntryHint(){const hint=entryPrompt();const el=document.querySelector('#entry-hint');if(!el)return;if(!running||locked||!hint){el.style.display='none';return}el.style.display='block';el.textContent=hint.text}
+
+let assetRun=null, completedAssetMissions={};
+// Economy time is measured in active gameplay, not wall-clock time.
+let economyElapsed=0, lastFrameTime=0, gigCooldown=0, cycles=0, ipoComplete=false;
+const ECONOMY_INTERVAL=45000;
+function portfolio(){let rows=propertyDefs.map(d=>{let o=ownedProperties[d.id];return '<b>'+d.name+'</b> — '+(o?'LEVEL '+o.level:'NOT OWNED')+(completedAssetMissions[d.id]?' · CONTRACT CLEARED':'')+'<br><small>'+d.desc+'</small>'}).join('<br><br>');modal('ASSET <span>EMPIRE</span>',rows+'<br><br>Properties pay every 45 seconds of active gameplay. [G] completes repeatable freelance contracts (+cash). Time to next payday: '+Math.ceil((ECONOMY_INTERVAL-economyElapsed)/1000)+'s. Freelance cooldown: '+Math.ceil(gigCooldown/1000)+'s.',[{text:'CLOSE',fn:closeModal}])}
+function showDialog(w,t){const d=document.querySelector('#dialog');d.innerHTML='<strong>'+w+'</strong><p>'+t+'</p>';d.style.display='block';dialogEnd=performance.now()+5500}
+function toast(t){document.querySelector('#toast').textContent=t;document.querySelector('#toast').style.opacity=1;toastEnd=performance.now()+2200}
+function modal(title,body,buttons){locked=true;const el=document.querySelector('#modal');el.style.display='grid';document.querySelector('#panel').innerHTML='<h1>'+title+'</h1><p>'+body+'</p><div id="choices"></div><p><small>Fictional satire of public tech-industry themes.</small></p>';let ch=document.querySelector('#choices');buttons.forEach(b=>{let bt=document.createElement('button');bt.textContent=b.text;bt.className=b.alt?'alt':'';bt.onclick=b.fn;ch.append(bt)})}
+function closeModal(){document.querySelector('#modal').style.display='none';locked=false}
+function start(){resetMissionQuiz();storyMissionState=freshStoryState();resetVehicle();gigRun=null;gigCompleted=0;vehicleUpgrade=0;autoSaveElapsed=0;economyElapsed=0;lastFrameTime=0;gigCooldown=0;cycles=0;ipoComplete=false;ownedProperties={};assetRun=null;completedAssetMissions={};running=true;stage=0;cash=650;gpu=0;hype=15;safety=80;wanted=0;policeEscapeElapsed=0;carrying=false;driving=false;player={x:800,y:1150};car={x:880,y:1170,a:0};cops=[{x:3900,y:2450},{x:3450,y:420}];deadline=0;arrestStart=0;checkpoint=null;missionStart=null;missionBannerUntil=performance.now()+2800;closeModal();showDialog('DARIO','Seven days until IPO. Jensen has the GPUs. Sam has the lawyers. I have a mission and a very optimistic valuation.');toast('NEW CAMPAIGN · THE IPO HEIST')}
+function endingTitle(){if(Object.keys(ownedProperties).length===3&&Object.values(ownedProperties).every(o=>o.level===2)&&Object.keys(completedAssetMissions).length===3)return 'SECRET ENDING: THE VERTICAL MONOPOLY';if(hype>=85&&safety>=70&&gpu>=140)return 'CLAUDE EMPIRE ENDING';if(safety<55)return 'AGI MERGER ENDING';return 'THE IPO SURVIVES';}
+function endingDescription(){if(Object.keys(ownedProperties).length===3&&Object.values(ownedProperties).every(o=>o.level===2)&&Object.keys(completedAssetMissions).length===3)return 'Dario owns every business in AI Vice City. Jensen sends a CUDA renewal invoice. Alice sends a separate commercial invoice and refuses to merge the two.';if(hype>=85&&safety>=70&&gpu>=140)return 'Claude rules the benchmarks. The safety team gets a vacation, pending seventeen approvals.';if(safety<55)return 'The market demands a merger. Sam brings a term sheet; Dario brings a very long model card.';return 'Anthropic rings the bell. The GPU suppliers win either way. Alice insists her contracts are her own.';}
+function advance(){const completedStage=stage;const m=missions[stage];showDialog(m.speaker,m.line);toast(m.reward);const e=m.effects||{};cash+=e.cash||0;gpu+=e.gpu||0;hype+=e.hype||0;safety+=e.safety||0;if(e.wanted!==undefined)wanted=e.wanted;if(e.carrying!==undefined)carrying=e.carrying;stage++;onStoryAdvance(completedStage);deadline=0;arrestStart=0;checkpoint=null;missionStart=null;missionBannerUntil=performance.now()+2600;if(stage===missions.length){ipoComplete=true;wanted=0;setTimeout(()=>modal('IPO <span>SUCCESS!</span>','Anthropic goes public! Cash: $'+cash+' · Compute: '+gpu+' · Hype: '+hype+'.<br><br><b>'+endingTitle()+'</b><br>'+endingDescription(),[{text:'CONTINUE FREE ROAM',fn:()=>{closeModal();toast('FREE ROAM · BUILD YOUR ASSET EMPIRE')}},{text:'NEW CAMPAIGN',alt:true,fn:start}]),1700)}}
+function fail(){if(locked)return;deadline=0;arrestStart=0;modal('<span class="failed">MISSION FAILED</span>','The compliance department has filed an incident report. It is longer than the model card.',[{text:'RETRY MISSION',fn:retryMission},{text:'RESTART CAMPAIGN',alt:true,fn:start}])}
+function busted(){
+ if(locked)return;
+ if(assetRun){failAssetMission('BUSTED');return;}if(gigRun)failGig();
+ arrestStart=0;deadline=0;
+ modal('<span class="busted">BUSTED</span>',
+ 'AI Vice City Police Department<br><b>Charge:</b> Excessive GPU possession and reckless valuation.<br><br>Mission failed. Your current mission will restart.',
+ [{text:'RETRY MISSION',fn:retryMission},{text:'RESTART CAMPAIGN',alt:true,fn:start}]);
+}
+function retryMission(){
+ resetMissionQuiz();
+ const previousBriefings=storyMissionState.briefedStages||[];
+ resetStoryMission(stage);
+ if(stage===0)storyMissionState.briefedStages=previousBriefings;
+ if(checkpoint){({cash,gpu,hype,safety,carrying}=checkpoint)}
+ // A retry starts a fresh attempt, never with the previous arrest meter or pursuers.
+ wanted=0;policeEscapeElapsed=0;
+ if(stage===1)carrying=true;
+ driving=false;resetVehicle();velocity={x:0,y:0};arrestStart=0;deadline=0;
+ missionStart=null;checkpoint=null;lastImpact=0;cargoIntegrity=100;rivalVans=[];
+ missionBannerUntil=performance.now()+2200;
+ // Continuation stages restart at the previous destination; new chapters at HQ.
+ const chapters=[0,2,4,5,7,8,9];
+ const prev=stage>0?sites[missions[stage-1].site]:sites[0];
+ const home=sites[0];
+ const origin=chapters.includes(stage)?home:prev;
+ player={x:origin.x+15,y:origin.y+90};
+ car={x:player.x+80,y:player.y+20,a:0};
+ cops=[{x:3900,y:2450},{x:3450,y:420}];
+ closeModal();toast('MISSION RESTARTED · PURSUIT RESET');
+}
+// Mission minigames share one neutral-choice UI: never reveal the answer via styling.
+const MISSION_ROUNDS={
+  poker:[
+    {q:'Your GPU budget was cut in half. What is the best move?',options:['Buy more GPUs on credit','Distill a smaller model','Cancel the benchmark'],correct:1},
+    {q:'Inference costs are rising. Which change helps?',options:['Cache repeated requests','Double every context window','Add animated logos'],correct:0},
+    {q:'Investors demand proof of efficiency. Show them:',options:['Parameter count','An unverified leaderboard','Quality per dollar on held-out tests'],correct:2}
+  ],
+  approval:[
+    {q:'Google Form 17-B: Who can approve TPU access?',options:['The committee that approves committees','The cafeteria robot','A random benchmark leaderboard'],correct:0},
+    {q:'Form 17-C: The approval workflow is stuck. What do you submit?',options:['Another GPU invoice','A documented risk assessment','A dancing Gemini logo'],correct:1},
+    {q:'Final compliance audit: What belongs in the deployment record?',options:['Nothing, ship immediately','Only the marketing slogan','Owner, limits and rollback plan'],correct:2}
+  ],
+  zuck:[
+    {q:'Three identical Zucks appear. Which clue identifies the real dealmaker?',options:['Offers a concrete distribution agreement','Promises everyone is a hologram','Refuses to discuss the product'],correct:0},
+    {q:'The glasses collect user data. Which contract protects users?',options:['Unlimited silent collection','Clear consent and data minimization','Sell all data to the highest bidder'],correct:1},
+    {q:'Meta offers an open-weight release. What should Dario verify?',options:['The jacket color','The number of VR headsets','License terms and model evaluation'],correct:2}
+  ],
+  market:[
+    {q:'A competitor launches a model. What should the IPO team publish?',options:['A fake leaderboard','Reproducible benchmark results','A promise of AGI tomorrow'],correct:1},
+    {q:'GPU prices spike. What keeps the business viable?',options:['Track unit economics and optimize inference','Double spending with no plan','Hide the invoices'],correct:0},
+    {q:'Analysts ask about safety. What is the credible response?',options:['Remove the safety team','Change the subject','Show evaluations, mitigations and governance'],correct:2}
+  ],
+  grok:[
+    {q:'Elon wants to launch the server racks into orbit. Your response?',options:['Approve immediate launch','Keep compute on the ground with a tested backup','Ask a meme account to certify the rocket'],correct:1},
+    {q:'A Grok bot rewrites the route mid-delivery. Which route do you trust?',options:['The verified dispatch route','The most viral post','A random map screenshot'],correct:0}
+  ]
+};
+let missionQuiz={stage:-1,round:0};
+function resetMissionQuiz(){missionQuiz={stage:-1,round:0}}
+function openMissionQuiz(kind){
+ if(missionQuiz.stage!==stage)missionQuiz={stage,round:0};
+ const rounds=MISSION_ROUNDS[kind],round=rounds[missionQuiz.round];
+ const heading={poker:'THE R1 GAMBIT',approval:'FORM 17-B',zuck:'FIND ZUCK',market:'THE MARKET',grok:'THE GROKFATHER'}[kind];
+ const prefix=kind==='market'?'IPO BOARD CHALLENGE':kind==='grok'?'COLOSSUS DISPATCH':'MISSION CHALLENGE';
+ modal(heading,'<b>'+prefix+' · '+(missionQuiz.round+1)+'/'+rounds.length+'</b><br><br>'+round.q,
+ round.options.map((option,i)=>({text:option,fn:()=>{
+   if(i!==round.correct){
+     const penalty=kind==='market'?75:kind==='poker'?50:25;
+     cash=Math.max(0,cash-penalty);hype=Math.max(0,hype-2);
+     resetMissionQuiz();closeModal();toast('INCORRECT · -$'+penalty+' · RETRY THE CHALLENGE');return;
+   }
+   missionQuiz.round++;
+   if(missionQuiz.round>=rounds.length){
+     resetMissionQuiz();closeModal();
+     if(kind==='market'&&(gpu<100||safety<40)){toast('IPO NOT READY · NEED 100 COMPUTE AND 40 SAFETY');return}
+     advance();
+   }else openMissionQuiz(kind);
+ }})).concat([{text:'LEAVE CHALLENGE',alt:true,fn:()=>{resetMissionQuiz();closeModal()}}]));
+}
+function challenge(m){
+ if(MISSION_ROUNDS[m.kind]){openMissionQuiz(m.kind);return}
+ if(stage===5){openMissionQuiz('grok');return}
+ advance();
+}
+function interact(){if(!running||locked)return;if(stage===0&&storyMissionState.loadingUntil){toast('BLACKWELL LOADING · PLEASE WAIT');return}const interactionPos=driving?car:player;if(gigRun&&gigTarget()&&closeEntry(interactionPos,siteEntry(gigTarget()))){finishGig();return}if(assetInteract())return;if(stage>=missions.length){const p=driving?car:player;const d=propertyDefs.find(q=>closeEntry(p,propertyEntry(q)));if(d){propertyMenu(d);return}const visit=sites.find(q=>closeEntry(p,siteEntry(q)));if(visit){showDialog(visit.n,'Welcome to '+visit.n+'. No active story mission here. Explore the city or press G for a freelance contract.');return}if(driving){const exit={x:car.x+45,y:car.y+22};if(!validPoint(exit.x,exit.y)){toast('NO SAFE PLACE TO EXIT');return}driving=false;velocity={x:0,y:0};player.x=exit.x;player.y=exit.y;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FREE ROAM · [G] CONTRACTS · [B] ASSETS');return}const pos=driving?car:player,m=missions[stage],s=sites[m.site];const nearbyProperty=propertyDefs.find(d=>closeEntry(pos,propertyEntry(d)));if(nearbyProperty){propertyMenu(nearbyProperty);return;}if(closeEntry(pos,siteEntry(s))){if(handleStoryInteraction())return;if(m.kind==='delivery'||m.kind==='escape'){if(deadline&&performance.now()>deadline){fail();return}}challenge(m);return}let site=sites.find(q=>closeEntry(pos,siteEntry(q)));if(site){showDialog(site.n,'Welcome to '+site.n+'. No active story mission here. Explore the city or press G for a freelance contract.');return}if(driving){driving=false;velocity={x:0,y:0};player.x=car.x+45;player.y=car.y+22;toast('EXIT VEHICLE');return}if(Math.hypot(player.x-car.x,player.y-car.y)<95){driving=true;velocity={x:0,y:0};toast('VEHICLE ENTERED');return}toast('FIND THE GLOWING ENTRANCE · CHECK THE MINIMAP')}
+function nextTimer(){if(!checkpoint&&stage<missions.length)checkpoint={cash,gpu,hype,safety,wanted,carrying};if(stage<missions.length&&['delivery','escape'].includes(missions[stage].kind)&&!deadline){deadline=performance.now()+Math.round(missions[stage].time*DIFFICULTY[difficulty].timer)*1000;toast('⏱ COUNTDOWN STARTED!')}}
+document.querySelector('#start').onclick=start;const diffPicker=document.createElement('div');diffPicker.style.cssText='margin:10px 0;color:#d6e7f9;font:13px system-ui';diffPicker.innerHTML='DIFFICULTY: <select id=diff-select style="background:#182d40;color:#fff;padding:8px;border:1px solid #6ad9da;border-radius:8px"><option value=casual>CASUAL · Story mode</option><option value=normal selected>NORMAL · Balanced</option><option value=hard>HARD · Vice City</option></select>';diffPicker.insertAdjacentHTML('beforeend','<div style="margin-top:7px;max-width:490px;color:#a7c3cf;font-size:12px">Casual: slower rivals, 45% collision damage, 1.65× time, longer arrest grace. Normal: 70% damage, 1.3× time. Hard: full damage and rival speed, standard time, fastest arrest. Affects driving, pursuits and timed courier missions; puzzle difficulty is unchanged.</div>');document.querySelector('#start').before(diffPicker);document.querySelector('#start').addEventListener('click',()=>{difficulty=document.querySelector('#diff-select').value});const loadButton=document.createElement('button');loadButton.textContent='CONTINUE SAVED GAME';loadButton.className='alt';loadButton.onclick=()=>loadGame();document.querySelector('#start').after(loadButton);addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!e.repeat)interact();if(k==='r'&&e.shiftKey&&!e.repeat&&running&&!locked)modal('RESTART CAMPAIGN?','This will erase your current unsaved progress. Press Cancel to return to the city.',[{text:'CANCEL',alt:true,fn:closeModal},{text:'RESTART CAMPAIGN',fn:start}]);if(k==='b'&&!e.repeat&&running&&!locked)portfolio();if(k==='g'&&!e.repeat)sideGig();if(k==='u'&&!e.repeat&&running&&!locked)garageMenu();if(k==='p'&&!e.repeat&&!locked)saveGame();if(k==='l'&&!e.repeat&&!locked)loadGame()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);document.querySelectorAll('#mobile button').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();if(k==='e')interact();else keys[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+function rect(a,b,w,h,c){ctx.fillStyle=c;ctx.fillRect(a,b,w,h)}function label(t,a,b,size=13,color='#fff'){ctx.fillStyle=color;ctx.font='bold '+size+'px system-ui';ctx.textAlign='center';ctx.fillText(t,a,b)}
+
+// Isometric projection: game mechanics remain in world-space, rendering is 2.5D.
+const ISOX=.79, ISOY=.40;
+function iso(wx,wy,z=0){return {x:(wx-wy)*ISOX,y:(wx+wy)*ISOY-z}}
+function polygon(pts,fill,stroke){ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}}
+function quad(points,fill,stroke){polygon(points.map(p=>iso(...p)),fill,stroke)}
+function prism(cx,cy,w,h,z,color){let a=cx-w/2,b=cy-h/2,A=iso(a,b,z),B=iso(a+w,b,z),D=iso(a,b+h,z),E=iso(a+w,b+h,z),aa=iso(a,b),bb=iso(a+w,b),dd=iso(a,b+h),ee=iso(a+w,b+h);
+polygon([B,E,ee,bb],shade(color,-36));polygon([D,E,ee,dd],shade(color,-54));polygon([A,B,E,D],color,'#ffffff25')}
+function shade(hex,amount){let n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,(n>>16)+amount)),g=Math.max(0,Math.min(255,((n>>8)&255)+amount)),b=Math.max(0,Math.min(255,(n&255)+amount));return `rgb(${r},${g},${b})`}
+// World geometry is separate from story data and mission scripting.
+function restrictedSite(x,y){return sites.some(s=>Math.abs(x-s.x)<110&&Math.abs(y-s.y)<90)||propertyDefs.some(d=>Math.abs(x-d.x)<72&&Math.abs(y-d.y)<62)}
+function ground(){
+ quad([[0,0,0],[WORLD.w,0,0],[WORLD.w,WORLD.h,0],[0,WORLD.h,0]],'#183544');
+ for(const d of DISTRICTS){const fill={water:'#12617b',park:'#285b4a',industrial:'#474b55',plaza:'#4d435b'}[d.type];
+  quad([[d.x,d.y,1],[d.x+d.w,d.y,1],[d.x+d.w,d.y+d.h,1],[d.x,d.y+d.h,1]],fill);
+  if(d.type==='water')for(let i=0;i<14;i++){let y=d.y+25+i*44;quad([[d.x+24,y,2],[d.x+d.w-30,y,2],[d.x+d.w-55,y+5,2],[d.x+44,y+5,2]],i%2?'#207c96':'#1a7088')}
+  if(d.type==='park')for(let i=0;i<28;i++){let x=d.x+45+(i*109)%(d.w-90),y=d.y+35+(i*167)%(d.h-70);if(!roadSurface(x,y))prism(x,y,25,25,20,i%2?'#3c8b62':'#397d5b')}
+  if(d.type==='industrial')for(let i=0;i<14;i++){let x=d.x+65+(i*157)%(d.w-120),y=d.y+55+(i*101)%(d.h-100);if(!roadSurface(x,y)&&!restrictedSite(x,y)&&!propertyDefs.some(p=>Math.abs(p.x-x)<215&&Math.abs(p.y-y)<195)&&!sites.some(s=>Math.abs(s.x-x)<240&&Math.abs(s.y-y)<220))prism(x,y,75,45,27,i%2?'#59636c':'#69616b')}
+ }
+ // The same simple polygons are used for world water and the minimap.
+ for(const w of WATERFRONT){
+  // Narrow stone shoreline and calm inset water, matching the existing flat city art.
+  const center=w.points.reduce((a,p)=>[a[0]+p[0]/w.points.length,a[1]+p[1]/w.points.length],[0,0]);
+  quad(w.points.map(p=>[p[0],p[1],2]),'#87948f');
+  quad(w.points.map(p=>[center[0]+(p[0]-center[0])*.985,center[1]+(p[1]-center[1])*.985,3]),'#12617b');
+ }
+ // Road surfaces, curbs and lane markings are rendered by unified_world_art.js.
+
+}
+// Original procedural palms and lamps replaced by reusable environment sprites.
+function streetDetails(t){}
+function minimap(){
+ const mw=174,mh=128,xx=W-mw-18,yy=H-mh-52;
+ ctx.save();ctx.fillStyle='#071222e8';ctx.fillRect(xx-6,yy-6,mw+12,mh+12);ctx.strokeStyle='#f779b880';ctx.strokeRect(xx-6,yy-6,mw+12,mh+12);
+ ctx.fillStyle='#173d46';ctx.fillRect(xx,yy,mw,mh);
+ for(const d of DISTRICTS){ctx.fillStyle={water:'#12617b',park:'#285b4a',industrial:'#474b55',plaza:'#4d435b'}[d.type];ctx.fillRect(xx+d.x/WORLD.w*mw,yy+d.y/WORLD.h*mh,d.w/WORLD.w*mw,d.h/WORLD.h*mh)}
+ for(const w of WATERFRONT){ctx.fillStyle='#12617b';ctx.beginPath();w.points.forEach((p,i)=>{const x=xx+p[0]/WORLD.w*mw,y=yy+p[1]/WORLD.h*mh;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.fill();}
+ for(const r of ROADS){ctx.fillStyle=r.kind==='highway'?'#a1b4ca':'#65758b';ctx.fillRect(xx+r.x/WORLD.w*mw,yy+r.y/WORLD.h*mh,Math.max(1,r.w/WORLD.w*mw),Math.max(1,r.h/WORLD.h*mh))}
+ // Draw the same non-grid roads used by the world renderer.
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ for(const r of CURVED_ROADS){
+  ctx.beginPath();
+  r.points.forEach((p,i)=>{const x=xx+p[0]/WORLD.w*mw,y=yy+p[1]/WORLD.h*mh;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+  ctx.strokeStyle=r.elevated?'#e6bd72':'#8395aa';ctx.lineWidth=Math.max(3,r.width/WORLD.w*mw);ctx.stroke();
+ }
+ // Highlight the elevated bypass junction on the NVIDIA-side north-south road.
+ ctx.fillStyle='#e6bd72';ctx.beginPath();ctx.arc(xx+2520/WORLD.w*mw,yy+1110/WORLD.h*mh,2.6,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+ sites.forEach((s,i)=>{ctx.fillStyle=s.color;ctx.fillRect(xx+s.x/WORLD.w*mw-2,yy+s.y/WORLD.h*mh-2,4,4)});propertyDefs.forEach(d=>{ctx.fillStyle=ownedProperties[d.id]?d.color:'#f3dfab';ctx.fillRect(xx+d.x/WORLD.w*mw-3,yy+d.y/WORLD.h*mh-3,6,6)});
+ if(gigRun){let st=gigTarget();ctx.strokeStyle='#8aff9c';ctx.lineWidth=3;ctx.beginPath();ctx.arc(xx+st.x/WORLD.w*mw,yy+st.y/WORLD.h*mh,8,0,7);ctx.stroke()}if(assetRun){let st=assetMissions[assetRun.id].steps[assetRun.step];ctx.strokeStyle='#62f3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx+st.x/WORLD.w*mw,yy+st.y/WORLD.h*mh,7,0,7);ctx.stroke()}else if(stage<missions.length){let s=(window.hqDefenseTargetSite&&window.hqDefenseTargetSite()||sites[missions[stage].site]);ctx.strokeStyle='#ffe16f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx+s.x/WORLD.w*mw,yy+s.y/WORLD.h*mh,6,0,7);ctx.stroke()}
+ const p=driving?car:player;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xx+p.x/WORLD.w*mw,yy+p.y/WORLD.h*mh,4,0,7);ctx.fill();ctx.restore();
+}
+function tower(s,i){let z=[115,150,180,160,135,230,170,205][i];prism(s.x,s.y,205,165,z,'#253e56');prism(s.x,s.y,183,146,z+13,s.color);
+for(let k=0;k<5;k++){let p=iso(s.x-75+k*34,s.y+83,z-30);ctx.fillStyle=k%2?'#f8d6a2':'#79d6ee';ctx.fillRect(p.x-7,p.y-3,14,7)}
+let p=iso(s.x,s.y,z+28);ctx.textAlign='center';ctx.font='900 15px system-ui';ctx.fillStyle=s.color;ctx.shadowBlur=14;ctx.shadowColor=s.color;ctx.fillText(s.n,p.x,p.y);ctx.shadowBlur=0;
+// Character names intentionally omitted from buildings.
+if(i===1){let a=iso(s.x,s.y,z+55);ctx.font='bold 30px system-ui';ctx.fillStyle='#b6f767';ctx.fillText('GPU',a.x,a.y)}
+if(i===3){let a=iso(s.x,s.y,z+65);ctx.fillStyle='#e9eaff';ctx.beginPath();ctx.moveTo(a.x,a.y-38);ctx.lineTo(a.x-13,a.y+12);ctx.lineTo(a.x+13,a.y+12);ctx.fill()}
+}
+function warehouseDetail(t){const s=sites[1];ctx.save();
+// A readable loading dock at street level, distinct from the office towers.
+for(let i=-1;i<=1;i++){const x=s.x+i*64,y=s.y+108;prism(x,y,51,35,18,'#536779');let p=iso(x,y+19,22);ctx.fillStyle='#101c2c';ctx.fillRect(p.x-17,p.y-10,34,13);ctx.strokeStyle='#9bf25a';ctx.lineWidth=2;ctx.strokeRect(p.x-17,p.y-10,34,13)}
+for(let i=0;i<5;i++){const x=s.x-110+i*50,y=s.y-112;prism(x,y,36,31,27,i%2?'#6a9a43':'#a6b85e');const p=iso(x,y,31);ctx.fillStyle='#162d1c';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText('B100',p.x,p.y)}
+const a=iso(s.x,s.y-102,182);ctx.textAlign='center';ctx.font='900 16px system-ui';ctx.fillStyle='#c4ff8d';ctx.shadowBlur=18;ctx.shadowColor='#8cff45';ctx.fillText('BLACKWELL SHIPPING',a.x,a.y);ctx.shadowBlur=0;
+const lamp=iso(s.x,s.y+130,15);ctx.fillStyle='#a0f97c';ctx.globalAlpha=.3+.16*Math.sin(t/400);ctx.beginPath();ctx.ellipse(lamp.x,lamp.y,85,23,0,0,7);ctx.fill();ctx.restore()}
+function streetAccent(){const s=sites[1];ctx.save();for(let i=-2;i<=2;i++){let p=iso(s.x+i*48,s.y+168,10);ctx.fillStyle='#f3e8b3';ctx.beginPath();ctx.moveTo(p.x,p.y-7);ctx.lineTo(p.x-9,p.y+4);ctx.lineTo(p.x+9,p.y+4);ctx.fill()}for(let i=-2;i<=2;i++){let p=iso(s.x+i*55,s.y+214,7);ctx.fillStyle='#c0d6dd';ctx.fillRect(p.x-11,p.y-2,22,3)}ctx.restore()}
+function spriteCar(px,py,a,color){let p=iso(px,py,8);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a/2);ctx.shadowBlur=15;ctx.shadowColor=color;ctx.fillStyle='#0a1123';ctx.beginPath();ctx.ellipse(0,8,34,15,0,0,7);ctx.fill();ctx.shadowBlur=0;polygon([{x:-32,y:-12},{x:26,y:-12},{x:34,y:4},{x:-25,y:4}],color);polygon([{x:-8,y:-17},{x:16,y:-17},{x:23,y:-12},{x:-14,y:-12}],'#8ed5e5');ctx.fillStyle='#ffe7a3';ctx.fillRect(26,-8,7,4);ctx.fillRect(27,0,7,4);ctx.restore()}
+function spritePerson(px,py){let p=iso(px,py,5);ctx.fillStyle='#080f24a0';ctx.beginPath();ctx.ellipse(p.x,p.y+5,14,7,0,0,7);ctx.fill();ctx.fillStyle='#e6a382';ctx.fillRect(p.x-8,p.y-27,16,24);ctx.fillStyle='#f1c6a5';ctx.beginPath();ctx.arc(p.x,p.y-34,9,0,7);ctx.fill();ctx.fillStyle='#f8d9ba';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('DARIO',p.x,p.y-51)}
+function draw(t){frame++;
+ const delta=lastFrameTime?Math.min(100,t-lastFrameTime):0;lastFrameTime=t;
+ if(window.ambientCity)window.ambientCity.update(delta);
+ if(running&&!locked){
+  if(gigRun){gigRun.remaining-=delta;if(gigRun.remaining<=0)failGig()}if(assetRun){assetRun.remaining-=delta;if(assetRun.remaining<=0)failAssetMission('MISSION FAILED')}
+  autoSaveElapsed+=delta;if(autoSaveElapsed>14000){autoSaveElapsed=0;saveGame(true)}
+  economyElapsed+=delta;gigCooldown=Math.max(0,gigCooldown-delta);
+  if(economyElapsed>=ECONOMY_INTERVAL){economyElapsed-=ECONOMY_INTERVAL;cycles++;propertyIncome();}
+let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+if(stage===0&&storyMissionState.loadingUntil){dx=0;dy=0;velocity={x:0,y:0}}
+let factor=Math.min(2.5,delta/16.67),mag=Math.hypot(dx,dy);if(mag){dx/=mag;dy/=mag}
+if(driving){const previousCarX=car.x,previousCarY=car.y,impactSpeed=Math.hypot(velocity.x,velocity.y);let onRoad=roadSurface(car.x,car.y),topSpeed=(onRoad?10.6:3.15)*(vehicleUpgrade?1.18:1),boost=keys[' ']?1.28:1;
+ let response=Math.min(1,(onRoad?.075:.045)*factor),friction=Math.pow(mag?.988:.92,factor);
+ velocity.x=(velocity.x+(dx*topSpeed*boost-velocity.x)*response)*friction;
+ velocity.y=(velocity.y+(dy*topSpeed*boost-velocity.y)*response)*friction;
+ let nx=car.x+velocity.x*factor,ny=car.y+velocity.y*factor;
+ if(validPoint(nx,car.y))car.x=nx;else{velocity.x*=-.22;if(t-lastImpact>900){lastImpact=t;toast('COLLISION · ROAD BLOCKED');if(chaseActive())cargoIntegrity=Math.max(0,cargoIntegrity-Math.ceil(8*DIFFICULTY[difficulty].damage))}}
+ if(validPoint(car.x,ny))car.y=ny;else{velocity.y*=-.22;if(t-lastImpact>900){lastImpact=t;toast('COLLISION · ROAD BLOCKED');if(chaseActive())cargoIntegrity=Math.max(0,cargoIntegrity-Math.ceil(8*DIFFICULTY[difficulty].damage))}}
+ if(Math.hypot(velocity.x,velocity.y)>.3)car.a=Math.atan2(velocity.y,velocity.x);
+ checkPoliceRamming(previousCarX,previousCarY,impactSpeed);
+ if(window.ambientCity)window.ambientCity.checkCollisions(previousCarX,previousCarY,Math.max(impactSpeed,Math.hypot(velocity.x,velocity.y)),t);
+}else if(mag){let nx=player.x+dx*3.7*factor,ny=player.y+dy*3.7*factor;if(validPoint(nx,player.y))player.x=nx;if(validPoint(player.x,ny))player.y=ny}
+if(chaseActive()&&cargoIntegrity<=0){if(stage===1&&carrying)fail();else failAssetMission('CARGO DESTROYED');}
+updateRivals(delta,t);
+let p=driving?car:player;p.x=Math.max(25,Math.min(WORLD.w-25,p.x));p.y=Math.max(25,Math.min(WORLD.h-25,p.y));if(!assetRun)nextTimer();updateStoryMission(delta,t);if(!assetRun&&deadline&&t>deadline)fail();if(wanted>0){
+ let contact=false,minPoliceDistance=Infinity;
+ cops.forEach(cp=>{
+  let d=Math.hypot(p.x-cp.x,p.y-cp.y);
+  if(d>28){cp.x+=(p.x-cp.x)/d*(.7+wanted*.42)*factor;cp.y+=(p.y-cp.y)/d*(.7+wanted*.42)*factor}
+  d=Math.hypot(p.x-cp.x,p.y-cp.y);
+  minPoliceDistance=Math.min(minPoliceDistance,d);
+  if(d<43)contact=true;
+ });
+ if(contact){
+  policeEscapeElapsed=0;
+  if(!arrestStart)arrestStart=t;
+  if(t-arrestStart>DIFFICULTY[difficulty].arrest)busted();
+ }else arrestStart=0;
+ if(minPoliceDistance>POLICE_ESCAPE_DISTANCE){
+  policeEscapeElapsed+=delta;
+  if(policeEscapeElapsed>=POLICE_ESCAPE_MS){
+   wanted=Math.max(0,wanted-1);policeEscapeElapsed=0;
+   toast(wanted?'POLICE LOST · ONE STAR REMOVED':'POLICE LOST · WANTED CLEARED');
+  }
+ }else policeEscapeElapsed=0;
+}else policeEscapeElapsed=0}
+const pos=driving?car:player,focus=iso(pos.x,pos.y),offX=W/2-focus.x,offY=H*.57-focus.y;ctx.clearRect(0,0,W,H);let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#100b2e');sky.addColorStop(.55,'#392249');sky.addColorStop(1,'#0d2b39');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(offX,offY);ground();streetDetails(t);streetAccent();
+
+
+DISTRICTS.filter(d=>d.type!=='water').forEach(d=>{let p=iso(d.x+d.w/2,d.y+d.h/2,9);ctx.textAlign='center';ctx.font='900 19px system-ui';ctx.fillStyle='#e7e9fc90';ctx.fillText(d.name,p.x,p.y)});
+let drawables=propertyDefs.map(d=>({y:d.x+d.y,fn:()=>{if(window.drawPropertySprite&&window.drawPropertySprite(d))return;let o=ownedProperties[d.id],z=o&&o.level===2?115:65;prism(d.x,d.y,125,105,z,o?d.color:'#58677a');let a=iso(d.x,d.y,z+26);ctx.textAlign='center';ctx.font='bold 12px system-ui';ctx.fillStyle=o?'#fff':'#ffdca8';ctx.shadowColor=d.color;ctx.shadowBlur=o?12:0;ctx.fillText(d.name,a.x,a.y);ctx.shadowBlur=0;let b=iso(d.x,d.y+90,6);ctx.font='bold 12px system-ui';ctx.fillText(o?'LVL '+o.level:'$'+d.price,b.x,b.y)}}));
+let drawablesOld=sites.map((s,i)=>({y:s.x+s.y,fn:()=>{tower(s,i);if(i===1)warehouseDetail(t)}}));drawables.push(...drawablesOld);drawables.push({y:car.x+car.y,fn:()=>spriteCar(car.x,car.y,car.a,'#ff5ba9')});if(!driving)drawables.push({y:player.x+player.y,fn:()=>spritePerson(player.x,player.y)});cops.forEach(cp=>drawables.push({y:cp.x+cp.y,fn:()=>spriteCar(cp.x,cp.y,0,'#5b9dff')}));rivalVans.forEach(v=>drawables.push({y:v.x+v.y,fn:()=>spriteCar(v.x,v.y,Math.atan2(v.vy,v.vx),'#ff794a')}));if(window.ambientCity)window.ambientCity.addDrawables(drawables);
+drawables.sort((a,b)=>a.y-b.y).forEach(d=>d.fn());
+drawEntryPads(t);
+drawStoryWorld(t,offX,offY);ctx.restore();minimap();drawEntryHint();drawStoryHud(t);
+if(running&&stage<missions.length&&t<missionBannerUntil){ctx.save();ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=15;ctx.fillStyle='#ffe3a2';ctx.font='900 22px system-ui';ctx.fillText(missions[stage].title,W/2,H*.22);ctx.restore()}
+document.querySelector('#stats').innerHTML='🏢 '+Object.keys(ownedProperties).length+'/3 ASSETS · [B] PORTFOLIO<br>'+'🎮 '+difficulty.toUpperCase()+' · 💵 $'+cash+'　⚡ '+gpu+' GPU　📈 '+hype+' HYPE<br>🛡 '+safety+' SAFETY　🚨 '+('★'.repeat(wanted)||'CLEAR')+(wanted&&policeEscapeElapsed?' · LOSING COPS '+Math.ceil((POLICE_ESCAPE_MS-policeEscapeElapsed)/1000)+'s':'')+'<br>🏦 PAYDAY '+Math.ceil((ECONOMY_INTERVAL-economyElapsed)/1000)+'s · [G] SIDE GIG '+(gigCooldown?Math.ceil(gigCooldown/1000)+'s':'READY')+'<br>'+(driving?(roadSurface(car.x,car.y)?'🚗 ROAD SPEED ×3.6':'🚙 OFF-ROAD SLOW'):'🚶 ON FOOT')+(assetRun?' · 🧊 ASSET CONTRACT ACTIVE':'')+(chaseActive()?' · 📦 CARGO '+cargoIntegrity+'%':'')+'<br>💾 [P] SAVE · [L] LOAD · [U] GARAGE · [G] CONTRACT';
+if(gigRun){let dest=gigTarget();document.querySelector('#quest').innerHTML='<b>FREELANCE · '+gigRun.name+'</b><p>'+(gigStep()?gigStep().label:'CONTRACT')+' · '+dest.n+' · '+((gigRun.step||0)+1)+'/'+(gigRun.steps?gigRun.steps.length:1)+'</p><small>'+Math.ceil(gigRun.remaining/1000)+'s · PRESS E AT DESTINATION · GREEN MINIMAP TARGET</small>'}else if(assetRun){let def=assetMissions[assetRun.id],st=def.steps[assetRun.step],d=Math.round(Math.hypot(pos.x-st.x,pos.y-st.y));document.querySelector('#quest').innerHTML='<b>ASSET · '+def.title+'</b><p>'+st.label+' ('+(assetRun.step+1)+'/'+def.steps.length+')</p><small>📍 '+d+'m · '+Math.ceil(assetRun.remaining/1000)+'s · E AT GLOWING ENTRY / CHECKPOINT'+(chaseActive()?' · CARGO '+cargoIntegrity+'%':'')+'</small>'}
+else if(stage<missions.length){let m=missions[stage],s=(window.hqDefenseTargetSite&&window.hqDefenseTargetSite()||sites[m.site]),d=Math.round(Math.hypot(pos.x-siteEntry(s).x,pos.y-siteEntry(s).y)),prop=propertyDefs.find(q=>closeEntry(pos,propertyEntry(q))),time=deadline?Math.max(0,Math.ceil((deadline-t)/1000)):null;document.querySelector('#quest').innerHTML='<b>'+(stage===4&&!storyMissionState.hqDefenseDone?'ANTHROPIC UNDER SIEGE':m.title)+'</b><p>'+storyGoal(m)+'</p><small>📍 '+d+'m '+(prop?'· E TO MANAGE '+prop.name:(d<ENTRY_RADIUS?'· PRESS E AT ENTRANCE':'· FIND THE GLOWING ENTRANCE'))+(time!==null?' · ⏱ '+time+'s':'')+'</small>'}else {let prop=propertyDefs.find(q=>closeEntry(pos,propertyEntry(q)));document.querySelector('#quest').innerHTML='<b>🏆 IPO SUCCESS · FREE ROAM</b><p>Own all three businesses, upgrade them, and keep earning.</p><small>'+(prop?'E · MANAGE '+prop.name:'G · FREELANCE CONTRACTS · B · PORTFOLIO')+'</small>'};if(t>dialogEnd)document.querySelector('#dialog').style.display='none';if(t>toastEnd)document.querySelector('#toast').style.opacity=0;requestAnimationFrame(draw)}requestAnimationFrame(draw);
